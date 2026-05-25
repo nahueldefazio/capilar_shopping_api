@@ -10,6 +10,7 @@ import { OrdersModule } from './modules/orders/orders.module';
 import { PaymentsModule } from './modules/payments/payments.module';
 import { CheckoutModule } from './modules/checkout/checkout.module';
 import { HealthModule } from './modules/health/health.module';
+import { AuthModule } from './modules/auth/auth.module';
 
 @Module({
   imports: [
@@ -25,6 +26,7 @@ import { HealthModule } from './modules/health/health.module';
       useFactory: (config: ConfigService) => config.get('database')!,
     }),
 
+    AuthModule,
     CategoriesModule,
     ProductsModule,
     CustomersModule,

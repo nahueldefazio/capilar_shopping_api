@@ -1,12 +1,14 @@
 import {
   Controller, Get, Post, Patch,
-  Param, Body, ParseIntPipe,
+  Param, Body, ParseIntPipe, UseGuards,
 } from '@nestjs/common';
 import { OrdersService } from './orders.service';
 import { CreateOrderDto } from './dto/create-order.dto';
 import { UpdateOrderStatusDto, UpdatePaymentStatusDto } from './dto/update-order.dto';
+import { AuthGuard } from '../auth/auth.guard';
 
 @Controller('orders')
+@UseGuards(AuthGuard)
 export class OrdersController {
   constructor(private readonly ordersService: OrdersService) {}
 

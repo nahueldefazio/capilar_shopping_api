@@ -21,6 +21,7 @@ const orders_module_1 = require("./modules/orders/orders.module");
 const payments_module_1 = require("./modules/payments/payments.module");
 const checkout_module_1 = require("./modules/checkout/checkout.module");
 const health_module_1 = require("./modules/health/health.module");
+const auth_module_1 = require("./modules/auth/auth.module");
 let AppModule = class AppModule {
 };
 exports.AppModule = AppModule;
@@ -37,6 +38,7 @@ exports.AppModule = AppModule = __decorate([
                 inject: [config_1.ConfigService],
                 useFactory: (config) => config.get('database'),
             }),
+            auth_module_1.AuthModule,
             categories_module_1.CategoriesModule,
             products_module_1.ProductsModule,
             customers_module_1.CustomersModule,
