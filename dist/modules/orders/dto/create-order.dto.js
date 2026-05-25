@@ -1,0 +1,118 @@
+"use strict";
+var __decorate = (this && this.__decorate) || function (decorators, target, key, desc) {
+    var c = arguments.length, r = c < 3 ? target : desc === null ? desc = Object.getOwnPropertyDescriptor(target, key) : desc, d;
+    if (typeof Reflect === "object" && typeof Reflect.decorate === "function") r = Reflect.decorate(decorators, target, key, desc);
+    else for (var i = decorators.length - 1; i >= 0; i--) if (d = decorators[i]) r = (c < 3 ? d(r) : c > 3 ? d(target, key, r) : d(target, key)) || r;
+    return c > 3 && r && Object.defineProperty(target, key, r), r;
+};
+var __metadata = (this && this.__metadata) || function (k, v) {
+    if (typeof Reflect === "object" && typeof Reflect.metadata === "function") return Reflect.metadata(k, v);
+};
+Object.defineProperty(exports, "__esModule", { value: true });
+exports.CreateOrderDto = exports.OrderCustomerDto = exports.OrderItemInputDto = void 0;
+const class_validator_1 = require("class-validator");
+const class_transformer_1 = require("class-transformer");
+const payment_enum_1 = require("../../../common/enums/payment.enum");
+const delivery_method_enum_1 = require("../../../common/enums/delivery-method.enum");
+const sale_type_enum_1 = require("../../../common/enums/sale-type.enum");
+class OrderItemInputDto {
+    productId;
+    quantity;
+}
+exports.OrderItemInputDto = OrderItemInputDto;
+__decorate([
+    (0, class_validator_1.IsInt)(),
+    (0, class_validator_1.IsPositive)(),
+    (0, class_transformer_1.Type)(() => Number),
+    __metadata("design:type", Number)
+], OrderItemInputDto.prototype, "productId", void 0);
+__decorate([
+    (0, class_validator_1.IsInt)(),
+    (0, class_validator_1.Min)(1),
+    (0, class_transformer_1.Type)(() => Number),
+    __metadata("design:type", Number)
+], OrderItemInputDto.prototype, "quantity", void 0);
+class OrderCustomerDto {
+    fullName;
+    email;
+    phone;
+    customerType;
+    address;
+    province;
+    city;
+    postalCode;
+}
+exports.OrderCustomerDto = OrderCustomerDto;
+__decorate([
+    (0, class_validator_1.IsString)(),
+    (0, class_validator_1.IsNotEmpty)(),
+    __metadata("design:type", String)
+], OrderCustomerDto.prototype, "fullName", void 0);
+__decorate([
+    (0, class_validator_1.IsEmail)(),
+    __metadata("design:type", String)
+], OrderCustomerDto.prototype, "email", void 0);
+__decorate([
+    (0, class_validator_1.IsString)(),
+    (0, class_validator_1.IsOptional)(),
+    __metadata("design:type", String)
+], OrderCustomerDto.prototype, "phone", void 0);
+__decorate([
+    (0, class_validator_1.IsEnum)(sale_type_enum_1.SaleType),
+    (0, class_validator_1.IsOptional)(),
+    __metadata("design:type", String)
+], OrderCustomerDto.prototype, "customerType", void 0);
+__decorate([
+    (0, class_validator_1.IsString)(),
+    (0, class_validator_1.IsOptional)(),
+    __metadata("design:type", String)
+], OrderCustomerDto.prototype, "address", void 0);
+__decorate([
+    (0, class_validator_1.IsString)(),
+    (0, class_validator_1.IsOptional)(),
+    __metadata("design:type", String)
+], OrderCustomerDto.prototype, "province", void 0);
+__decorate([
+    (0, class_validator_1.IsString)(),
+    (0, class_validator_1.IsOptional)(),
+    __metadata("design:type", String)
+], OrderCustomerDto.prototype, "city", void 0);
+__decorate([
+    (0, class_validator_1.IsString)(),
+    (0, class_validator_1.IsOptional)(),
+    __metadata("design:type", String)
+], OrderCustomerDto.prototype, "postalCode", void 0);
+class CreateOrderDto {
+    customer;
+    items;
+    paymentMethod;
+    deliveryMethod;
+    notes;
+}
+exports.CreateOrderDto = CreateOrderDto;
+__decorate([
+    (0, class_validator_1.ValidateNested)(),
+    (0, class_transformer_1.Type)(() => OrderCustomerDto),
+    __metadata("design:type", OrderCustomerDto)
+], CreateOrderDto.prototype, "customer", void 0);
+__decorate([
+    (0, class_validator_1.IsArray)(),
+    (0, class_validator_1.ArrayMinSize)(1),
+    (0, class_validator_1.ValidateNested)({ each: true }),
+    (0, class_transformer_1.Type)(() => OrderItemInputDto),
+    __metadata("design:type", Array)
+], CreateOrderDto.prototype, "items", void 0);
+__decorate([
+    (0, class_validator_1.IsEnum)(payment_enum_1.PaymentMethod),
+    __metadata("design:type", String)
+], CreateOrderDto.prototype, "paymentMethod", void 0);
+__decorate([
+    (0, class_validator_1.IsEnum)(delivery_method_enum_1.DeliveryMethod),
+    __metadata("design:type", String)
+], CreateOrderDto.prototype, "deliveryMethod", void 0);
+__decorate([
+    (0, class_validator_1.IsString)(),
+    (0, class_validator_1.IsOptional)(),
+    __metadata("design:type", String)
+], CreateOrderDto.prototype, "notes", void 0);
+//# sourceMappingURL=create-order.dto.js.map
