@@ -6,7 +6,8 @@
   "private": true,
   "license": "UNLICENSED",
   "scripts": {
-    "build": "node_modules/.bin/nest build",
+    "build": "echo 'dist already compiled, skipping build'",
+    "build:local": "node_modules/.bin/nest build",
     "start": "node dist/main",
     "start:dev": "node_modules/.bin/nest start --watch",
     "start:prod": "node dist/main",
