@@ -9,14 +9,16 @@ async function bootstrap() {
   // Global prefix for all routes
   app.setGlobalPrefix('api');
 
-  // CORS — permite el frontend local y el de producción
-  const allowedOrigins = [
-    'http://localhost:4200',
-    process.env.FRONTEND_URL,
-  ].filter(Boolean) as string[];
+  const productionOrigin = process.env.FRONTEND_URL;
 
   app.enableCors({
-    origin: allowedOrigins,
+    origin: (origin: string | undefined, callback: (err: Error | null, allow?: boolean) => void) => {
+      if (!origin || /^http:\/\/localhost(:\d+)?$/.test(origin) || origin === productionOrigin) {
+        callback(null, true);
+      } else {
+        callback(new Error('Not allowed by CORS'));
+      }
+    },
     methods: ['GET', 'POST', 'PATCH', 'DELETE', 'OPTIONS'],
     allowedHeaders: ['Content-Type', 'Authorization'],
     credentials: true,

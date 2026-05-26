@@ -7,12 +7,16 @@ const http_exception_filter_1 = require("./common/filters/http-exception.filter"
 async function bootstrap() {
     const app = await core_1.NestFactory.create(app_module_1.AppModule);
     app.setGlobalPrefix('api');
-    const allowedOrigins = [
-        'http://localhost:4200',
-        process.env.FRONTEND_URL,
-    ].filter(Boolean);
+    const productionOrigin = process.env.FRONTEND_URL;
     app.enableCors({
-        origin: allowedOrigins,
+        origin: (origin, callback) => {
+            if (!origin || /^http:\/\/localhost(:\d+)?$/.test(origin) || origin === productionOrigin) {
+                callback(null, true);
+            }
+            else {
+                callback(new Error('Not allowed by CORS'));
+            }
+        },
         methods: ['GET', 'POST', 'PATCH', 'DELETE', 'OPTIONS'],
         allowedHeaders: ['Content-Type', 'Authorization'],
         credentials: true,
