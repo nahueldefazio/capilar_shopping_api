@@ -1,6 +1,10 @@
 # Dependencies
 node_modules/
 
+# Uploaded images (stay on server, not in git)
+uploads/*
+!uploads/.gitkeep
+
 # Environment variables
 .env
 

@@ -11,6 +11,7 @@ import { PaymentsModule } from './modules/payments/payments.module';
 import { CheckoutModule } from './modules/checkout/checkout.module';
 import { HealthModule } from './modules/health/health.module';
 import { AuthModule } from './modules/auth/auth.module';
+import { UploadsModule } from './modules/uploads/uploads.module';
 
 @Module({
   imports: [
@@ -27,6 +28,7 @@ import { AuthModule } from './modules/auth/auth.module';
     }),
 
     AuthModule,
+    UploadsModule,
     CategoriesModule,
     ProductsModule,
     CustomersModule,
