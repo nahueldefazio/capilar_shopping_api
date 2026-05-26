@@ -9,11 +9,15 @@ async function bootstrap() {
   // Global prefix for all routes
   app.setGlobalPrefix('api');
 
-  const productionOrigin = process.env.FRONTEND_URL;
+  const allowedOrigins = [
+    process.env.FRONTEND_URL,
+    'https://lemonchiffon-goldfish-284566.hostingersite.com',
+    'https://navajowhite-quetzal-176085.hostingersite.com',
+  ].filter(Boolean);
 
   app.enableCors({
     origin: (origin: string | undefined, callback: (err: Error | null, allow?: boolean) => void) => {
-      if (!origin || /^http:\/\/localhost(:\d+)?$/.test(origin) || origin === productionOrigin) {
+      if (!origin || /^http:\/\/localhost(:\d+)?$/.test(origin) || allowedOrigins.includes(origin)) {
         callback(null, true);
       } else {
         callback(new Error('Not allowed by CORS'));

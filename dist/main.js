@@ -7,10 +7,14 @@ const http_exception_filter_1 = require("./common/filters/http-exception.filter"
 async function bootstrap() {
     const app = await core_1.NestFactory.create(app_module_1.AppModule);
     app.setGlobalPrefix('api');
-    const productionOrigin = process.env.FRONTEND_URL;
+    const allowedOrigins = [
+        process.env.FRONTEND_URL,
+        'https://lemonchiffon-goldfish-284566.hostingersite.com',
+        'https://navajowhite-quetzal-176085.hostingersite.com',
+    ].filter(Boolean);
     app.enableCors({
         origin: (origin, callback) => {
-            if (!origin || /^http:\/\/localhost(:\d+)?$/.test(origin) || origin === productionOrigin) {
+            if (!origin || /^http:\/\/localhost(:\d+)?$/.test(origin) || allowedOrigins.includes(origin)) {
                 callback(null, true);
             }
             else {
