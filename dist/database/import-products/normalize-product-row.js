@@ -52,7 +52,7 @@ function normalizeProductRow(row, categoryName) {
             stock: 0,
             isActive: true,
             featured: false,
-            imageUrl: '',
+            imageUrl: row.imageUrl?.trim() ?? '',
         },
     };
 }

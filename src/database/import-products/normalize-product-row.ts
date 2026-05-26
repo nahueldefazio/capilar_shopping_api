@@ -59,7 +59,7 @@ export function normalizeProductRow(
       stock: 0,
       isActive: true,
       featured: false,
-      imageUrl: '',
+      imageUrl: row.imageUrl?.trim() ?? '',
     },
   };
 }

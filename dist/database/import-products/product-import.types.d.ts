@@ -2,6 +2,7 @@ export interface RawProductRow {
     name: string;
     rawPrice: string;
     brand: string;
+    imageUrl?: string;
     notes?: string;
 }
 export interface NormalizedProductRow {
