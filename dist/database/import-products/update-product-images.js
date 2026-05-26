@@ -46,7 +46,18 @@ async function run() {
     const rawRows = JSON.parse(fs.readFileSync(RAW_JSON_PATH, 'utf-8'));
     const withImage = rawRows.filter((r) => r.imageUrl && r.imageUrl.trim() !== '');
     console.log(`\n📄 Productos con imagen en JSON: ${withImage.length} de ${rawRows.length}`);
-    const app = await core_1.NestFactory.createApplicationContext(app_module_1.AppModule, { logger: false });
+    let app = null;
+    try {
+        app = await Promise.race([
+            core_1.NestFactory.createApplicationContext(app_module_1.AppModule, { logger: false }),
+            new Promise((_, reject) => setTimeout(() => reject(new Error('DB connection timeout after 10s')), 10000)),
+        ]);
+    }
+    catch (err) {
+        console.error('\n❌ No se pudo conectar a la base de datos:', err.message);
+        console.error('   Verificá que el archivo .env exista con las credenciales correctas.');
+        process.exit(1);
+    }
     const productRepo = app.get((0, typeorm_1.getRepositoryToken)(product_entity_1.Product));
     let updated = 0;
     let notFound = 0;
@@ -60,7 +71,7 @@ async function run() {
         const { slug, imageUrl } = result.data;
         const product = await productRepo.findOne({ where: { slug } });
         if (!product) {
-            console.log(`  ⚠️  No encontrado en BD: ${row.name} (slug: ${slug})`);
+            console.log(`  ⚠️  No encontrado en BD: ${row.name}`);
             notFound++;
             continue;
         }
@@ -69,14 +80,15 @@ async function run() {
             continue;
         }
         await productRepo.update(product.id, { imageUrl });
-        console.log(`  ✅ Actualizado: ${product.name}`);
+        console.log(`  ✅ ${product.name}`);
         updated++;
     }
     console.log(`\n🎉 Listo. Actualizados: ${updated} | No encontrados: ${notFound} | Sin cambios: ${skipped}`);
     await app.close();
+    process.exit(0);
 }
 run().catch((err) => {
-    console.error('❌ Error:', err);
+    console.error('❌ Error inesperado:', err);
     process.exit(1);
 });
 //# sourceMappingURL=update-product-images.js.map

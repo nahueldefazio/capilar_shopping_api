@@ -16,7 +16,21 @@ async function run() {
   const withImage = rawRows.filter((r) => r.imageUrl && r.imageUrl.trim() !== '');
   console.log(`\n📄 Productos con imagen en JSON: ${withImage.length} de ${rawRows.length}`);
 
-  const app = await NestFactory.createApplicationContext(AppModule, { logger: false });
+  let app: Awaited<ReturnType<typeof NestFactory.createApplicationContext>> | null = null;
+
+  try {
+    app = await Promise.race([
+      NestFactory.createApplicationContext(AppModule, { logger: false }),
+      new Promise<never>((_, reject) =>
+        setTimeout(() => reject(new Error('DB connection timeout after 10s')), 10000),
+      ),
+    ]);
+  } catch (err) {
+    console.error('\n❌ No se pudo conectar a la base de datos:', (err as Error).message);
+    console.error('   Verificá que el archivo .env exista con las credenciales correctas.');
+    process.exit(1);
+  }
+
   const productRepo = app.get<Repository<Product>>(getRepositoryToken(Product));
 
   let updated = 0;
@@ -31,7 +45,7 @@ async function run() {
     const product = await productRepo.findOne({ where: { slug } });
 
     if (!product) {
-      console.log(`  ⚠️  No encontrado en BD: ${row.name} (slug: ${slug})`);
+      console.log(`  ⚠️  No encontrado en BD: ${row.name}`);
       notFound++;
       continue;
     }
@@ -42,15 +56,16 @@ async function run() {
     }
 
     await productRepo.update(product.id, { imageUrl });
-    console.log(`  ✅ Actualizado: ${product.name}`);
+    console.log(`  ✅ ${product.name}`);
     updated++;
   }
 
   console.log(`\n🎉 Listo. Actualizados: ${updated} | No encontrados: ${notFound} | Sin cambios: ${skipped}`);
   await app.close();
+  process.exit(0);
 }
 
 run().catch((err) => {
-  console.error('❌ Error:', err);
+  console.error('❌ Error inesperado:', err);
   process.exit(1);
 });
