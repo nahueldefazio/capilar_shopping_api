@@ -27,5 +27,10 @@ npm-debug.log*
 # TypeORM migrations (generated, not source)
 src/migrations/*.js
 
+# TypeScript build artifacts that should not be tracked
+dist/src/
+dist/test/
+dist/tsconfig.tsbuildinfo
+
 # Generated import preview (run npm run import:products:preview to regenerate)
 src/database/import-products/imported-products.preview.json

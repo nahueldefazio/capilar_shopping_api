@@ -53,7 +53,7 @@ __decorate([
     __metadata("design:type", Number)
 ], Product.prototype, "price", void 0);
 __decorate([
-    (0, typeorm_1.Column)({ default: 0 }),
+    (0, typeorm_1.Column)({ default: 100 }),
     __metadata("design:type", Number)
 ], Product.prototype, "stock", void 0);
 __decorate([

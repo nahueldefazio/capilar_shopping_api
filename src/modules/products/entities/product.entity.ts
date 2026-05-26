@@ -29,7 +29,7 @@ export class Product {
   @Column({ type: 'decimal', precision: 10, scale: 2 })
   price: number;
 
-  @Column({ default: 0 })
+  @Column({ default: 100 })
   stock: number;
 
   @Column({ nullable: true })
