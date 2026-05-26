@@ -39,6 +39,10 @@ const fs = __importStar(require("fs"));
 const path = __importStar(require("path"));
 const product_entity_1 = require("../../modules/products/entities/product.entity");
 const category_entity_1 = require("../../modules/categories/entities/category.entity");
+const order_entity_1 = require("../../modules/orders/entities/order.entity");
+const order_item_entity_1 = require("../../modules/orders/entities/order-item.entity");
+const customer_entity_1 = require("../../modules/customers/entities/customer.entity");
+const payment_entity_1 = require("../../modules/payments/entities/payment.entity");
 const normalize_product_row_1 = require("./normalize-product-row");
 const RAW_JSON_PATH = path.join(__dirname, 'imported-products.raw.json');
 async function run() {
@@ -52,7 +56,7 @@ async function run() {
         username: process.env.DB_USERNAME,
         password: process.env.DB_PASSWORD,
         database: process.env.DB_DATABASE,
-        entities: [product_entity_1.Product, category_entity_1.Category],
+        entities: [product_entity_1.Product, category_entity_1.Category, order_entity_1.Order, order_item_entity_1.OrderItem, customer_entity_1.Customer, payment_entity_1.Payment],
         synchronize: false,
         logging: false,
         charset: 'utf8mb4',

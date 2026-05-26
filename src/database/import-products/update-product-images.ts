@@ -4,6 +4,10 @@ import * as fs from 'fs';
 import * as path from 'path';
 import { Product } from '../../modules/products/entities/product.entity';
 import { Category } from '../../modules/categories/entities/category.entity';
+import { Order } from '../../modules/orders/entities/order.entity';
+import { OrderItem } from '../../modules/orders/entities/order-item.entity';
+import { Customer } from '../../modules/customers/entities/customer.entity';
+import { Payment } from '../../modules/payments/entities/payment.entity';
 import { normalizeProductRow } from './normalize-product-row';
 import type { RawProductRow } from './product-import.types';
 
@@ -21,7 +25,7 @@ async function run() {
     username: process.env.DB_USERNAME,
     password: process.env.DB_PASSWORD,
     database: process.env.DB_DATABASE,
-    entities: [Product, Category],
+    entities: [Product, Category, Order, OrderItem, Customer, Payment],
     synchronize: false,
     logging: false,
     charset: 'utf8mb4',
