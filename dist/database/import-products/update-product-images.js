@@ -37,11 +37,9 @@ require("reflect-metadata");
 const typeorm_1 = require("typeorm");
 const fs = __importStar(require("fs"));
 const path = __importStar(require("path"));
-const dotenv = __importStar(require("dotenv"));
 const product_entity_1 = require("../../modules/products/entities/product.entity");
 const category_entity_1 = require("../../modules/categories/entities/category.entity");
 const normalize_product_row_1 = require("./normalize-product-row");
-dotenv.config({ path: path.join(__dirname, '../../..', '.env') });
 const RAW_JSON_PATH = path.join(__dirname, 'imported-products.raw.json');
 async function run() {
     const rawRows = JSON.parse(fs.readFileSync(RAW_JSON_PATH, 'utf-8'));

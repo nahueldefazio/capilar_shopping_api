@@ -2,13 +2,10 @@ import 'reflect-metadata';
 import { DataSource } from 'typeorm';
 import * as fs from 'fs';
 import * as path from 'path';
-import * as dotenv from 'dotenv';
 import { Product } from '../../modules/products/entities/product.entity';
 import { Category } from '../../modules/categories/entities/category.entity';
 import { normalizeProductRow } from './normalize-product-row';
 import type { RawProductRow } from './product-import.types';
-
-dotenv.config({ path: path.join(__dirname, '../../..', '.env') });
 
 const RAW_JSON_PATH = path.join(__dirname, 'imported-products.raw.json');
 
