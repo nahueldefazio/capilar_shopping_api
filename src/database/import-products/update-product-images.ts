@@ -2,12 +2,6 @@ import 'reflect-metadata';
 import { DataSource } from 'typeorm';
 import * as fs from 'fs';
 import * as path from 'path';
-import { Product } from '../../modules/products/entities/product.entity';
-import { Category } from '../../modules/categories/entities/category.entity';
-import { Order } from '../../modules/orders/entities/order.entity';
-import { OrderItem } from '../../modules/orders/entities/order-item.entity';
-import { Customer } from '../../modules/customers/entities/customer.entity';
-import { Payment } from '../../modules/payments/entities/payment.entity';
 import { normalizeProductRow } from './normalize-product-row';
 import type { RawProductRow } from './product-import.types';
 
@@ -25,7 +19,7 @@ async function run() {
     username: process.env.DB_USERNAME,
     password: process.env.DB_PASSWORD,
     database: process.env.DB_DATABASE,
-    entities: [Product, Category, Order, OrderItem, Customer, Payment],
+    entities: [path.join(__dirname, '../../**/*.entity.js')],
     synchronize: false,
     logging: false,
     charset: 'utf8mb4',
@@ -39,6 +33,8 @@ async function run() {
     process.exit(1);
   }
 
+  // eslint-disable-next-line @typescript-eslint/no-require-imports
+  const { Product } = require('../../modules/products/entities/product.entity');
   const productRepo = ds.getRepository(Product);
   let updated = 0;
   let notFound = 0;
