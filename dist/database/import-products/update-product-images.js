@@ -34,31 +34,40 @@ var __importStar = (this && this.__importStar) || (function () {
 })();
 Object.defineProperty(exports, "__esModule", { value: true });
 require("reflect-metadata");
-const core_1 = require("@nestjs/core");
-const typeorm_1 = require("@nestjs/typeorm");
+const typeorm_1 = require("typeorm");
 const fs = __importStar(require("fs"));
 const path = __importStar(require("path"));
-const app_module_1 = require("../../app.module");
+const dotenv = __importStar(require("dotenv"));
 const product_entity_1 = require("../../modules/products/entities/product.entity");
+const category_entity_1 = require("../../modules/categories/entities/category.entity");
 const normalize_product_row_1 = require("./normalize-product-row");
+dotenv.config({ path: path.join(__dirname, '../../..', '.env') });
 const RAW_JSON_PATH = path.join(__dirname, 'imported-products.raw.json');
 async function run() {
     const rawRows = JSON.parse(fs.readFileSync(RAW_JSON_PATH, 'utf-8'));
     const withImage = rawRows.filter((r) => r.imageUrl && r.imageUrl.trim() !== '');
     console.log(`\n📄 Productos con imagen en JSON: ${withImage.length} de ${rawRows.length}`);
-    let app = null;
+    const ds = new typeorm_1.DataSource({
+        type: 'mysql',
+        host: process.env.DB_HOST ?? '127.0.0.1',
+        port: parseInt(process.env.DB_PORT ?? '3306', 10),
+        username: process.env.DB_USERNAME,
+        password: process.env.DB_PASSWORD,
+        database: process.env.DB_DATABASE,
+        entities: [product_entity_1.Product, category_entity_1.Category],
+        synchronize: false,
+        logging: false,
+        charset: 'utf8mb4',
+    });
     try {
-        app = await Promise.race([
-            core_1.NestFactory.createApplicationContext(app_module_1.AppModule, { logger: false }),
-            new Promise((_, reject) => setTimeout(() => reject(new Error('DB connection timeout after 10s')), 10000)),
-        ]);
+        await ds.initialize();
+        console.log('  🔌 Conectado a la base de datos\n');
     }
     catch (err) {
-        console.error('\n❌ No se pudo conectar a la base de datos:', err.message);
-        console.error('   Verificá que el archivo .env exista con las credenciales correctas.');
+        console.error('❌ No se pudo conectar a la BD:', err.message);
         process.exit(1);
     }
-    const productRepo = app.get((0, typeorm_1.getRepositoryToken)(product_entity_1.Product));
+    const productRepo = ds.getRepository(product_entity_1.Product);
     let updated = 0;
     let notFound = 0;
     let skipped = 0;
@@ -71,7 +80,7 @@ async function run() {
         const { slug, imageUrl } = result.data;
         const product = await productRepo.findOne({ where: { slug } });
         if (!product) {
-            console.log(`  ⚠️  No encontrado en BD: ${row.name}`);
+            console.log(`  ⚠️  No encontrado: ${row.name}`);
             notFound++;
             continue;
         }
@@ -84,7 +93,7 @@ async function run() {
         updated++;
     }
     console.log(`\n🎉 Listo. Actualizados: ${updated} | No encontrados: ${notFound} | Sin cambios: ${skipped}`);
-    await app.close();
+    await ds.destroy();
     process.exit(0);
 }
 run().catch((err) => {

@@ -1,13 +1,14 @@
 import 'reflect-metadata';
-import { NestFactory } from '@nestjs/core';
-import { getRepositoryToken } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
+import { DataSource } from 'typeorm';
 import * as fs from 'fs';
 import * as path from 'path';
-import { AppModule } from '../../app.module';
+import * as dotenv from 'dotenv';
 import { Product } from '../../modules/products/entities/product.entity';
+import { Category } from '../../modules/categories/entities/category.entity';
 import { normalizeProductRow } from './normalize-product-row';
 import type { RawProductRow } from './product-import.types';
+
+dotenv.config({ path: path.join(__dirname, '../../..', '.env') });
 
 const RAW_JSON_PATH = path.join(__dirname, 'imported-products.raw.json');
 
@@ -16,23 +17,28 @@ async function run() {
   const withImage = rawRows.filter((r) => r.imageUrl && r.imageUrl.trim() !== '');
   console.log(`\n📄 Productos con imagen en JSON: ${withImage.length} de ${rawRows.length}`);
 
-  let app: Awaited<ReturnType<typeof NestFactory.createApplicationContext>> | null = null;
+  const ds = new DataSource({
+    type: 'mysql',
+    host: process.env.DB_HOST ?? '127.0.0.1',
+    port: parseInt(process.env.DB_PORT ?? '3306', 10),
+    username: process.env.DB_USERNAME,
+    password: process.env.DB_PASSWORD,
+    database: process.env.DB_DATABASE,
+    entities: [Product, Category],
+    synchronize: false,
+    logging: false,
+    charset: 'utf8mb4',
+  });
 
   try {
-    app = await Promise.race([
-      NestFactory.createApplicationContext(AppModule, { logger: false }),
-      new Promise<never>((_, reject) =>
-        setTimeout(() => reject(new Error('DB connection timeout after 10s')), 10000),
-      ),
-    ]);
+    await ds.initialize();
+    console.log('  🔌 Conectado a la base de datos\n');
   } catch (err) {
-    console.error('\n❌ No se pudo conectar a la base de datos:', (err as Error).message);
-    console.error('   Verificá que el archivo .env exista con las credenciales correctas.');
+    console.error('❌ No se pudo conectar a la BD:', (err as Error).message);
     process.exit(1);
   }
 
-  const productRepo = app.get<Repository<Product>>(getRepositoryToken(Product));
-
+  const productRepo = ds.getRepository(Product);
   let updated = 0;
   let notFound = 0;
   let skipped = 0;
@@ -45,7 +51,7 @@ async function run() {
     const product = await productRepo.findOne({ where: { slug } });
 
     if (!product) {
-      console.log(`  ⚠️  No encontrado en BD: ${row.name}`);
+      console.log(`  ⚠️  No encontrado: ${row.name}`);
       notFound++;
       continue;
     }
@@ -61,7 +67,7 @@ async function run() {
   }
 
   console.log(`\n🎉 Listo. Actualizados: ${updated} | No encontrados: ${notFound} | Sin cambios: ${skipped}`);
-  await app.close();
+  await ds.destroy();
   process.exit(0);
 }
 
