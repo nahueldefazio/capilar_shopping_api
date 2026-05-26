@@ -18,6 +18,7 @@ const typeorm_1 = require("@nestjs/typeorm");
 const typeorm_2 = require("typeorm");
 const order_entity_1 = require("./entities/order.entity");
 const order_item_entity_1 = require("./entities/order-item.entity");
+const product_entity_1 = require("../products/entities/product.entity");
 const customers_service_1 = require("../customers/customers.service");
 const products_service_1 = require("../products/products.service");
 const order_status_enum_1 = require("../../common/enums/order-status.enum");
@@ -87,6 +88,9 @@ let OrdersService = class OrdersService {
                 subtotal: Math.round(Number(product.price) * quantity * 100) / 100,
             }));
             const savedItems = await manager.save(order_item_entity_1.OrderItem, items);
+            for (const { product, quantity } of resolvedItems) {
+                await manager.decrement(product_entity_1.Product, { id: product.id }, 'stock', quantity);
+            }
             savedOrder.customer = customer;
             savedOrder.items = savedItems;
             savedOrder.payments = [];
@@ -105,9 +109,6 @@ let OrdersService = class OrdersService {
         order.paymentStatus = dto.paymentStatus;
         if (dto.paymentStatus === payment_enum_1.PaymentStatus.APPROVED && wasNotPaid) {
             order.status = order_status_enum_1.OrderStatus.PAID;
-            for (const item of order.items) {
-                await this.productsService.decrementStock(item.productId, item.quantity);
-            }
         }
         await this.orderRepo.save(order);
         return this.findOne(id);

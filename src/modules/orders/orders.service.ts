@@ -7,6 +7,7 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { Repository, DataSource } from 'typeorm';
 import { Order } from './entities/order.entity';
 import { OrderItem } from './entities/order-item.entity';
+import { Product } from '../products/entities/product.entity';
 import { CreateOrderDto } from './dto/create-order.dto';
 import { UpdateOrderStatusDto, UpdatePaymentStatusDto } from './dto/update-order.dto';
 import { CustomersService } from '../customers/customers.service';
@@ -102,10 +103,10 @@ const order = await this.orderRepo.findOne({
       );
       const savedItems = await manager.save(OrderItem, items);
 
-      // 7. NOTE: Stock is NOT decremented here.
-      // Call decrementStock() when paymentStatus transitions to APPROVED.
-      // This avoids locking stock on unpaid orders.
-      // See updatePaymentStatus() below.
+      // 7. Decrement stock atomically within the transaction
+      for (const { product, quantity } of resolvedItems) {
+        await manager.decrement(Product, { id: product.id }, 'stock', quantity);
+      }
 
       savedOrder.customer = customer;
       savedOrder.items = savedItems;
@@ -127,12 +128,8 @@ const order = await this.orderRepo.findOne({
 
     order.paymentStatus = dto.paymentStatus;
 
-    // Decrement stock when payment is confirmed for the first time
     if (dto.paymentStatus === PaymentStatus.APPROVED && wasNotPaid) {
       order.status = OrderStatus.PAID;
-      for (const item of order.items) {
-        await this.productsService.decrementStock(item.productId, item.quantity);
-      }
     }
 
     await this.orderRepo.save(order);
