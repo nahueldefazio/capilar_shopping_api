@@ -35,7 +35,7 @@ export class OrdersService {
   }
 
   async findOne(id: number): Promise<Order> {
-    const order = await this.orderRepo.findOne({
+const order = await this.orderRepo.findOne({
       where: { id },
       relations: ['customer', 'items', 'payments'],
     });
@@ -100,14 +100,17 @@ export class OrdersService {
           subtotal: Math.round(Number(product.price) * quantity * 100) / 100,
         }),
       );
-      await manager.save(OrderItem, items);
+      const savedItems = await manager.save(OrderItem, items);
 
       // 7. NOTE: Stock is NOT decremented here.
       // Call decrementStock() when paymentStatus transitions to APPROVED.
       // This avoids locking stock on unpaid orders.
       // See updatePaymentStatus() below.
 
-      return this.findOne(savedOrder.id);
+      savedOrder.customer = customer;
+      savedOrder.items = savedItems;
+      savedOrder.payments = [];
+      return savedOrder;
     });
   }
 

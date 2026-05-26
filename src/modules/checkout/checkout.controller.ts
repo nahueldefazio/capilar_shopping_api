@@ -1,4 +1,4 @@
-import { Controller, Post, Body } from '@nestjs/common';
+import { Controller, Post, Get, Body, Param, ParseIntPipe } from '@nestjs/common';
 import { OrdersService } from '../orders/orders.service';
 import { CreateOrderDto } from './dto/checkout.dto';
 
@@ -6,13 +6,13 @@ import { CreateOrderDto } from './dto/checkout.dto';
 export class CheckoutController {
   constructor(private readonly ordersService: OrdersService) {}
 
-  /**
-   * POST /checkout/create-order
-   * Punto de entrada público desde el frontend.
-   * Valida stock, calcula total server-side y crea la orden.
-   */
   @Post('create-order')
   createOrder(@Body() dto: CreateOrderDto) {
     return this.ordersService.create(dto);
+  }
+
+  @Get('order/:id')
+  getOrder(@Param('id', ParseIntPipe) id: number) {
+    return this.ordersService.findOne(id);
   }
 }

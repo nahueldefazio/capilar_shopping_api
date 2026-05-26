@@ -86,8 +86,11 @@ let OrdersService = class OrdersService {
                 quantity,
                 subtotal: Math.round(Number(product.price) * quantity * 100) / 100,
             }));
-            await manager.save(order_item_entity_1.OrderItem, items);
-            return this.findOne(savedOrder.id);
+            const savedItems = await manager.save(order_item_entity_1.OrderItem, items);
+            savedOrder.customer = customer;
+            savedOrder.items = savedItems;
+            savedOrder.payments = [];
+            return savedOrder;
         });
     }
     async updateStatus(id, dto) {

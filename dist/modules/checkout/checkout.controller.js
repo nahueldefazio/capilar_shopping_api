@@ -24,6 +24,9 @@ let CheckoutController = class CheckoutController {
     createOrder(dto) {
         return this.ordersService.create(dto);
     }
+    getOrder(id) {
+        return this.ordersService.findOne(id);
+    }
 };
 exports.CheckoutController = CheckoutController;
 __decorate([
@@ -33,6 +36,13 @@ __decorate([
     __metadata("design:paramtypes", [checkout_dto_1.CreateOrderDto]),
     __metadata("design:returntype", void 0)
 ], CheckoutController.prototype, "createOrder", null);
+__decorate([
+    (0, common_1.Get)('order/:id'),
+    __param(0, (0, common_1.Param)('id', common_1.ParseIntPipe)),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [Number]),
+    __metadata("design:returntype", void 0)
+], CheckoutController.prototype, "getOrder", null);
 exports.CheckoutController = CheckoutController = __decorate([
     (0, common_1.Controller)('checkout'),
     __metadata("design:paramtypes", [orders_service_1.OrdersService])
