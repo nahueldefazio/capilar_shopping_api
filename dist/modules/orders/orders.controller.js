@@ -38,6 +38,9 @@ let OrdersController = class OrdersController {
     updatePaymentStatus(id, dto) {
         return this.ordersService.updatePaymentStatus(id, dto);
     }
+    updateShipping(id, dto) {
+        return this.ordersService.updateShipping(id, dto);
+    }
 };
 exports.OrdersController = OrdersController;
 __decorate([
@@ -76,6 +79,14 @@ __decorate([
     __metadata("design:paramtypes", [Number, update_order_dto_1.UpdatePaymentStatusDto]),
     __metadata("design:returntype", void 0)
 ], OrdersController.prototype, "updatePaymentStatus", null);
+__decorate([
+    (0, common_1.Patch)(':id/shipping'),
+    __param(0, (0, common_1.Param)('id', common_1.ParseIntPipe)),
+    __param(1, (0, common_1.Body)()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [Number, update_order_dto_1.UpdateShippingDto]),
+    __metadata("design:returntype", void 0)
+], OrdersController.prototype, "updateShipping", null);
 exports.OrdersController = OrdersController = __decorate([
     (0, common_1.Controller)('orders'),
     (0, common_1.UseGuards)(auth_guard_1.AuthGuard),

@@ -13,10 +13,12 @@ exports.Order = void 0;
 const typeorm_1 = require("typeorm");
 const customer_entity_1 = require("../../customers/entities/customer.entity");
 const order_item_entity_1 = require("./order-item.entity");
+const order_shipping_entity_1 = require("./order-shipping.entity");
 const payment_entity_1 = require("../../payments/entities/payment.entity");
 const order_status_enum_1 = require("../../../common/enums/order-status.enum");
 const payment_enum_1 = require("../../../common/enums/payment.enum");
 const delivery_method_enum_1 = require("../../../common/enums/delivery-method.enum");
+const shipping_zone_enum_1 = require("../../../common/enums/shipping-zone.enum");
 let Order = class Order {
     id;
     orderNumber;
@@ -24,7 +26,11 @@ let Order = class Order {
     customerId;
     items;
     payments;
+    shipping;
+    subtotal;
+    shippingCost;
     total;
+    shippingZone;
     status;
     paymentMethod;
     paymentStatus;
@@ -60,9 +66,25 @@ __decorate([
     __metadata("design:type", Array)
 ], Order.prototype, "payments", void 0);
 __decorate([
+    (0, typeorm_1.OneToOne)(() => order_shipping_entity_1.OrderShipping, (s) => s.order, { cascade: true, eager: true, nullable: true }),
+    __metadata("design:type", order_shipping_entity_1.OrderShipping)
+], Order.prototype, "shipping", void 0);
+__decorate([
+    (0, typeorm_1.Column)({ type: 'decimal', precision: 10, scale: 2, default: 0 }),
+    __metadata("design:type", Number)
+], Order.prototype, "subtotal", void 0);
+__decorate([
+    (0, typeorm_1.Column)({ type: 'decimal', precision: 10, scale: 2, default: 0 }),
+    __metadata("design:type", Number)
+], Order.prototype, "shippingCost", void 0);
+__decorate([
     (0, typeorm_1.Column)({ type: 'decimal', precision: 10, scale: 2 }),
     __metadata("design:type", Number)
 ], Order.prototype, "total", void 0);
+__decorate([
+    (0, typeorm_1.Column)({ type: 'enum', enum: shipping_zone_enum_1.ShippingZone, nullable: true }),
+    __metadata("design:type", Object)
+], Order.prototype, "shippingZone", void 0);
 __decorate([
     (0, typeorm_1.Column)({ type: 'enum', enum: order_status_enum_1.OrderStatus, default: order_status_enum_1.OrderStatus.CREATED }),
     __metadata("design:type", String)

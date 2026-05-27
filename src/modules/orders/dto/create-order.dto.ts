@@ -61,10 +61,41 @@ export class OrderCustomerDto {
   postalCode?: string;
 }
 
+export class OrderShippingInputDto {
+  @IsString()
+  @IsNotEmpty()
+  province: string;
+
+  @IsString()
+  @IsNotEmpty()
+  city: string;
+
+  @IsString()
+  @IsNotEmpty()
+  postalCode: string;
+
+  @IsString()
+  @IsNotEmpty()
+  street: string;
+
+  @IsString()
+  @IsNotEmpty()
+  streetNumber: string;
+
+  @IsString()
+  @IsOptional()
+  apartment?: string;
+}
+
 export class CreateOrderDto {
   @ValidateNested()
   @Type(() => OrderCustomerDto)
   customer: OrderCustomerDto;
+
+  @ValidateNested()
+  @IsOptional()
+  @Type(() => OrderShippingInputDto)
+  shipping?: OrderShippingInputDto;
 
   @IsArray()
   @ArrayMinSize(1)

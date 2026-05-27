@@ -8,6 +8,7 @@ export declare class Product {
     description: string;
     price: number;
     stock: number;
+    weightGrams: number;
     imageUrl: string;
     saleType: SaleType;
     isActive: boolean;

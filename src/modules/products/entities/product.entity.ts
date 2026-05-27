@@ -32,6 +32,9 @@ export class Product {
   @Column({ default: 100 })
   stock: number;
 
+  @Column({ default: 500 })
+  weightGrams: number;
+
   @Column({ nullable: true })
   imageUrl: string;
 

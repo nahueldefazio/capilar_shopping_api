@@ -21,6 +21,7 @@ let Product = class Product {
     description;
     price;
     stock;
+    weightGrams;
     imageUrl;
     saleType;
     isActive;
@@ -56,6 +57,10 @@ __decorate([
     (0, typeorm_1.Column)({ default: 100 }),
     __metadata("design:type", Number)
 ], Product.prototype, "stock", void 0);
+__decorate([
+    (0, typeorm_1.Column)({ default: 500 }),
+    __metadata("design:type", Number)
+], Product.prototype, "weightGrams", void 0);
 __decorate([
     (0, typeorm_1.Column)({ nullable: true }),
     __metadata("design:type", String)

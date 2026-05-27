@@ -9,7 +9,7 @@ var __metadata = (this && this.__metadata) || function (k, v) {
     if (typeof Reflect === "object" && typeof Reflect.metadata === "function") return Reflect.metadata(k, v);
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.CreateOrderDto = exports.OrderCustomerDto = exports.OrderItemInputDto = void 0;
+exports.CreateOrderDto = exports.OrderShippingInputDto = exports.OrderCustomerDto = exports.OrderItemInputDto = void 0;
 const class_validator_1 = require("class-validator");
 const class_transformer_1 = require("class-transformer");
 const payment_enum_1 = require("../../../common/enums/payment.enum");
@@ -82,8 +82,48 @@ __decorate([
     (0, class_validator_1.IsOptional)(),
     __metadata("design:type", String)
 ], OrderCustomerDto.prototype, "postalCode", void 0);
+class OrderShippingInputDto {
+    province;
+    city;
+    postalCode;
+    street;
+    streetNumber;
+    apartment;
+}
+exports.OrderShippingInputDto = OrderShippingInputDto;
+__decorate([
+    (0, class_validator_1.IsString)(),
+    (0, class_validator_1.IsNotEmpty)(),
+    __metadata("design:type", String)
+], OrderShippingInputDto.prototype, "province", void 0);
+__decorate([
+    (0, class_validator_1.IsString)(),
+    (0, class_validator_1.IsNotEmpty)(),
+    __metadata("design:type", String)
+], OrderShippingInputDto.prototype, "city", void 0);
+__decorate([
+    (0, class_validator_1.IsString)(),
+    (0, class_validator_1.IsNotEmpty)(),
+    __metadata("design:type", String)
+], OrderShippingInputDto.prototype, "postalCode", void 0);
+__decorate([
+    (0, class_validator_1.IsString)(),
+    (0, class_validator_1.IsNotEmpty)(),
+    __metadata("design:type", String)
+], OrderShippingInputDto.prototype, "street", void 0);
+__decorate([
+    (0, class_validator_1.IsString)(),
+    (0, class_validator_1.IsNotEmpty)(),
+    __metadata("design:type", String)
+], OrderShippingInputDto.prototype, "streetNumber", void 0);
+__decorate([
+    (0, class_validator_1.IsString)(),
+    (0, class_validator_1.IsOptional)(),
+    __metadata("design:type", String)
+], OrderShippingInputDto.prototype, "apartment", void 0);
 class CreateOrderDto {
     customer;
+    shipping;
     items;
     paymentMethod;
     deliveryMethod;
@@ -95,6 +135,12 @@ __decorate([
     (0, class_transformer_1.Type)(() => OrderCustomerDto),
     __metadata("design:type", OrderCustomerDto)
 ], CreateOrderDto.prototype, "customer", void 0);
+__decorate([
+    (0, class_validator_1.ValidateNested)(),
+    (0, class_validator_1.IsOptional)(),
+    (0, class_transformer_1.Type)(() => OrderShippingInputDto),
+    __metadata("design:type", OrderShippingInputDto)
+], CreateOrderDto.prototype, "shipping", void 0);
 __decorate([
     (0, class_validator_1.IsArray)(),
     (0, class_validator_1.ArrayMinSize)(1),

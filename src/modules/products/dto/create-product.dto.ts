@@ -39,6 +39,12 @@ export class CreateProductDto {
   stock: number;
 
   @IsInt()
+  @Min(0)
+  @IsOptional()
+  @Type(() => Number)
+  weightGrams?: number;
+
+  @IsInt()
   @IsOptional()
   @Type(() => Number)
   categoryId?: number;

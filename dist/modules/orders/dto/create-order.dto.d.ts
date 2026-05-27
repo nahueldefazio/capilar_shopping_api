@@ -15,8 +15,17 @@ export declare class OrderCustomerDto {
     city?: string;
     postalCode?: string;
 }
+export declare class OrderShippingInputDto {
+    province: string;
+    city: string;
+    postalCode: string;
+    street: string;
+    streetNumber: string;
+    apartment?: string;
+}
 export declare class CreateOrderDto {
     customer: OrderCustomerDto;
+    shipping?: OrderShippingInputDto;
     items: OrderItemInputDto[];
     paymentMethod: PaymentMethod;
     deliveryMethod: DeliveryMethod;
