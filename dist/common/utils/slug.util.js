@@ -12,7 +12,7 @@ function slugify(text) {
         .replace(/-+/g, '-')
         .slice(0, 100);
 }
-function generateOrderNumber(sequence) {
-    return `CAP-${String(sequence).padStart(4, '0')}`;
+function generateOrderNumber() {
+    return require('crypto').randomUUID();
 }
 //# sourceMappingURL=slug.util.js.map

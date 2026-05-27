@@ -91,8 +91,7 @@ let OrdersService = class OrdersService {
                 shippingZone = shippingResult.zone;
             }
             const total = Math.round((subtotal + shippingCost) * 100) / 100;
-            const count = await manager.count(order_entity_1.Order);
-            const orderNumber = (0, slug_util_1.generateOrderNumber)(count + 1);
+            const orderNumber = (0, slug_util_1.generateOrderNumber)();
             const order = manager.create(order_entity_1.Order, {
                 orderNumber,
                 customerId: customer.id,
