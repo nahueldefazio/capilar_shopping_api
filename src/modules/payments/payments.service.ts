@@ -1,6 +1,7 @@
 import { Injectable, Logger, BadRequestException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
+import { createHmac } from 'crypto';
 import MercadoPagoConfig, { Preference, Payment as MPPayment } from 'mercadopago';
 import { Payment } from './entities/payment.entity';
 import { OrdersService } from '../orders/orders.service';
@@ -64,18 +65,42 @@ export class PaymentsService {
     return { preferenceId: result.id, initPoint: result.init_point };
   }
 
+  private verifyMPSignature(
+    xSignature: string,
+    xRequestId: string,
+    dataId: string,
+  ): boolean {
+    const secret = process.env.MERCADOPAGO_WEBHOOK_SECRET;
+    if (!secret || !xSignature) return !secret; // if no secret configured, skip validation
+
+    const parts = Object.fromEntries(
+      xSignature.split(',').map((p) => p.trim().split('=')),
+    ) as { ts?: string; v1?: string };
+
+    if (!parts.ts || !parts.v1) return false;
+
+    const manifest = `id:${dataId};request-id:${xRequestId};ts:${parts.ts};`;
+    const expected = createHmac('sha256', secret).update(manifest).digest('hex');
+    return expected === parts.v1;
+  }
+
   async handleMercadoPagoWebhook(
     body: Record<string, unknown>,
     query: Record<string, string>,
+    xSignature = '',
+    xRequestId = '',
   ): Promise<void> {
-    // MP envía el pago como body JSON { type: 'payment', data: { id: '...' } }
-    // o como query params ?topic=payment&id=...
     const type = (body.type ?? query.topic) as string;
     const paymentId = String((body.data as Record<string, unknown>)?.id ?? query.id ?? '');
 
     this.logger.log(`[MP Webhook] type=${type} paymentId=${paymentId}`);
 
     if (type !== 'payment' || !paymentId) return;
+
+    if (!this.verifyMPSignature(xSignature, xRequestId, paymentId)) {
+      this.logger.warn('[MP Webhook] Invalid signature — request ignored');
+      return;
+    }
 
     try {
       const mpApi = new MPPayment(this.mp);

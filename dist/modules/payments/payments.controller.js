@@ -23,8 +23,8 @@ let PaymentsController = class PaymentsController {
     createPreference(orderId) {
         return this.paymentsService.createMercadoPagoPreference(orderId);
     }
-    webhook(payload) {
-        return this.paymentsService.handleMercadoPagoWebhook(payload);
+    webhook(body, query, xSignature, xRequestId) {
+        return this.paymentsService.handleMercadoPagoWebhook(body, query, xSignature, xRequestId);
     }
 };
 exports.PaymentsController = PaymentsController;
@@ -39,8 +39,11 @@ __decorate([
     (0, common_1.Post)('mercadopago/webhook'),
     (0, common_1.HttpCode)(common_1.HttpStatus.OK),
     __param(0, (0, common_1.Body)()),
+    __param(1, (0, common_1.Query)()),
+    __param(2, (0, common_1.Headers)('x-signature')),
+    __param(3, (0, common_1.Headers)('x-request-id')),
     __metadata("design:type", Function),
-    __metadata("design:paramtypes", [Object]),
+    __metadata("design:paramtypes", [Object, Object, String, String]),
     __metadata("design:returntype", void 0)
 ], PaymentsController.prototype, "webhook", null);
 exports.PaymentsController = PaymentsController = __decorate([

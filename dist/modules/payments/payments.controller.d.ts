@@ -6,5 +6,5 @@ export declare class PaymentsController {
         preferenceId: string;
         initPoint: string;
     }>;
-    webhook(payload: Record<string, unknown>): Promise<void>;
+    webhook(body: Record<string, unknown>, query: Record<string, string>, xSignature: string, xRequestId: string): Promise<void>;
 }
