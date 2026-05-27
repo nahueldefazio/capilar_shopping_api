@@ -94,6 +94,7 @@ let PaymentsService = PaymentsService_1 = class PaymentsService {
                     pending: `${frontendUrl}/pago-resultado`,
                 },
                 auto_return: 'approved',
+                statement_descriptor: 'Capilar Shopping',
                 notification_url: `${apiUrl}/api/payments/mercadopago/webhook`,
             },
         });
