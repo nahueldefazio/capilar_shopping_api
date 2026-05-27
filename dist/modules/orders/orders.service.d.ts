@@ -13,6 +13,7 @@ export declare class OrdersService {
     private readonly dataSource;
     constructor(orderRepo: Repository<Order>, itemRepo: Repository<OrderItem>, customersService: CustomersService, productsService: ProductsService, dataSource: DataSource);
     findAll(): Promise<Order[]>;
+    findByOrderNumber(orderNumber: string): Promise<Order | null>;
     findOne(id: number): Promise<Order>;
     create(dto: CreateOrderDto): Promise<Order>;
     updateStatus(id: number, dto: UpdateOrderStatusDto): Promise<Order>;

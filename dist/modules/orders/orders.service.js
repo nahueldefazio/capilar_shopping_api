@@ -43,6 +43,12 @@ let OrdersService = class OrdersService {
             order: { createdAt: 'DESC' },
         });
     }
+    async findByOrderNumber(orderNumber) {
+        return this.orderRepo.findOne({
+            where: { orderNumber },
+            relations: ['customer', 'items'],
+        });
+    }
     async findOne(id) {
         const order = await this.orderRepo.findOne({
             where: { id },
