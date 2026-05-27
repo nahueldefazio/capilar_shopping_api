@@ -47,7 +47,7 @@ export class PaymentsService {
         },
         back_urls: {
           success: `${frontendUrl}/pago-resultado`,
-          failure: `${frontendUrl}/pago-resultado`,
+          failure: `${frontendUrl}`,
           pending: `${frontendUrl}/pago-resultado`,
         },
         auto_return: 'approved',
