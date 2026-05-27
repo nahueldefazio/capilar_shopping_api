@@ -90,14 +90,23 @@ export class PaymentsService {
     xSignature = '',
     xRequestId = '',
   ): Promise<void> {
-    const type = (body.type ?? query.topic) as string;
-    const paymentId = String((body.data as Record<string, unknown>)?.id ?? query.id ?? '');
+    // MP sends type in body.type (new format) or query.type/query.topic (IPN format)
+    const type = (body.type ?? query.type ?? query.topic) as string;
+    // MP sends data.id as query param "data.id" (new format) or body.data.id, fallback to query.id (IPN)
+    const paymentId = String(
+      (body.data as Record<string, unknown>)?.id ??
+      query['data.id'] ??
+      query.id ??
+      '',
+    );
+    // Signature validation uses query param data.id per MP docs
+    const signatureDataId = query['data.id'] ?? paymentId;
 
     this.logger.log(`[MP Webhook] type=${type} paymentId=${paymentId}`);
 
     if (type !== 'payment' || !paymentId) return;
 
-    if (!this.verifyMPSignature(xSignature, xRequestId, paymentId)) {
+    if (!this.verifyMPSignature(xSignature, xRequestId, signatureDataId)) {
       this.logger.warn('[MP Webhook] Invalid signature — request ignored');
       return;
     }

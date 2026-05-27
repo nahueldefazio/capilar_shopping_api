@@ -116,12 +116,16 @@ let PaymentsService = PaymentsService_1 = class PaymentsService {
         return expected === parts.v1;
     }
     async handleMercadoPagoWebhook(body, query, xSignature = '', xRequestId = '') {
-        const type = (body.type ?? query.topic);
-        const paymentId = String(body.data?.id ?? query.id ?? '');
+        const type = (body.type ?? query.type ?? query.topic);
+        const paymentId = String(body.data?.id ??
+            query['data.id'] ??
+            query.id ??
+            '');
+        const signatureDataId = query['data.id'] ?? paymentId;
         this.logger.log(`[MP Webhook] type=${type} paymentId=${paymentId}`);
         if (type !== 'payment' || !paymentId)
             return;
-        if (!this.verifyMPSignature(xSignature, xRequestId, paymentId)) {
+        if (!this.verifyMPSignature(xSignature, xRequestId, signatureDataId)) {
             this.logger.warn('[MP Webhook] Invalid signature — request ignored');
             return;
         }
