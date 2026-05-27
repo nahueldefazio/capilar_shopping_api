@@ -9,6 +9,6 @@ export function slugify(text: string): string {
     .slice(0, 100);
 }
 
-export function generateOrderNumber(sequence: number): string {
-  return `CAP-${String(sequence).padStart(4, '0')}`;
+export function generateOrderNumber(): string {
+  return require('crypto').randomUUID() as string;
 }

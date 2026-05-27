@@ -110,8 +110,7 @@ export class OrdersService {
       const total = Math.round((subtotal + shippingCost) * 100) / 100;
 
       // 5. Generate order number
-      const count = await manager.count(Order);
-      const orderNumber = generateOrderNumber(count + 1);
+      const orderNumber = generateOrderNumber();
 
       // 6. Build order
       const order = manager.create(Order, {
