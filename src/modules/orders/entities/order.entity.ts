@@ -26,6 +26,9 @@ export class Order {
   @Column({ length: 30, unique: true })
   orderNumber: string;
 
+  @Column({ type: 'varchar', length: 64, nullable: true })
+  publicToken: string | null;
+
   @ManyToOne(() => Customer, (customer) => customer.orders, { eager: true, nullable: true })
   @JoinColumn({ name: 'customerId' })
   customer: Customer;
@@ -62,6 +65,9 @@ export class Order {
 
   @Column({ type: 'enum', enum: PaymentStatus, default: PaymentStatus.PENDING })
   paymentStatus: PaymentStatus;
+
+  @Column({ default: false })
+  stockDeducted: boolean;
 
   @Column({ type: 'enum', enum: DeliveryMethod, default: DeliveryMethod.HOME_DELIVERY })
   deliveryMethod: DeliveryMethod;

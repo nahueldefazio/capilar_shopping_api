@@ -18,6 +18,7 @@ const customers_module_1 = require("../customers/customers.module");
 const products_module_1 = require("../products/products.module");
 const shipping_module_1 = require("../shipping/shipping.module");
 const auth_module_1 = require("../auth/auth.module");
+const emails_module_1 = require("../emails/emails.module");
 let OrdersModule = class OrdersModule {
 };
 exports.OrdersModule = OrdersModule;
@@ -29,6 +30,7 @@ exports.OrdersModule = OrdersModule = __decorate([
             products_module_1.ProductsModule,
             shipping_module_1.ShippingModule,
             auth_module_1.AuthModule,
+            emails_module_1.EmailsModule,
         ],
         controllers: [orders_controller_1.OrdersController],
         providers: [orders_service_1.OrdersService],

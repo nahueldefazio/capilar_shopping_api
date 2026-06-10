@@ -24,6 +24,7 @@ const shipping_module_1 = require("./modules/shipping/shipping.module");
 const health_module_1 = require("./modules/health/health.module");
 const auth_module_1 = require("./modules/auth/auth.module");
 const uploads_module_1 = require("./modules/uploads/uploads.module");
+const legal_module_1 = require("./modules/legal/legal.module");
 let AppModule = class AppModule {
 };
 exports.AppModule = AppModule;
@@ -49,6 +50,7 @@ exports.AppModule = AppModule = __decorate([
             payments_module_1.PaymentsModule,
             checkout_module_1.CheckoutModule,
             shipping_module_1.ShippingModule,
+            legal_module_1.LegalModule,
             health_module_1.HealthModule,
         ],
     })

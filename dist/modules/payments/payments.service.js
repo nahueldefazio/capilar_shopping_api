@@ -69,6 +69,9 @@ let PaymentsService = PaymentsService_1 = class PaymentsService {
         });
     }
     async createMercadoPagoPreference(orderId) {
+        if (!process.env.MERCADOPAGO_ACCESS_TOKEN) {
+            throw new common_1.BadRequestException('Mercado Pago no esta configurado');
+        }
         const order = await this.ordersService.findOne(orderId);
         this.logger.log(`[MP] Creating preference for order ${order.orderNumber}`);
         const frontendUrl = process.env.FRONTEND_URL ?? 'https://lemonchiffon-goldfish-284566.hostingersite.com';
@@ -89,9 +92,9 @@ let PaymentsService = PaymentsService_1 = class PaymentsService {
                     email: order.customer?.email ?? '',
                 },
                 back_urls: {
-                    success: `${frontendUrl}/pago-resultado`,
+                    success: `${frontendUrl}/pago-resultado?order_id=${order.id}&token=${order.publicToken}`,
                     failure: `${frontendUrl}`,
-                    pending: `${frontendUrl}/pago-resultado`,
+                    pending: `${frontendUrl}/pago-resultado?order_id=${order.id}&token=${order.publicToken}`,
                 },
                 auto_return: 'approved',
                 statement_descriptor: 'Capilar Shopping',
@@ -107,8 +110,10 @@ let PaymentsService = PaymentsService_1 = class PaymentsService {
     }
     verifyMPSignature(xSignature, xRequestId, dataId) {
         const secret = process.env.MERCADOPAGO_WEBHOOK_SECRET;
-        if (!secret || !xSignature)
-            return !secret;
+        if (!secret)
+            return process.env.NODE_ENV !== 'production';
+        if (!xSignature)
+            return false;
         const parts = Object.fromEntries(xSignature.split(',').map((p) => p.trim().split('=')));
         if (!parts.ts || !parts.v1)
             return false;

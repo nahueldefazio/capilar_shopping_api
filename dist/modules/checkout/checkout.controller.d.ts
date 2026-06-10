@@ -4,5 +4,5 @@ export declare class CheckoutController {
     private readonly ordersService;
     constructor(ordersService: OrdersService);
     createOrder(dto: CreateOrderDto): Promise<import("../orders/entities/order.entity").Order>;
-    getOrder(id: number): Promise<import("../orders/entities/order.entity").Order>;
+    getOrder(id: number, token: string): Promise<import("../orders/entities/order.entity").Order>;
 }

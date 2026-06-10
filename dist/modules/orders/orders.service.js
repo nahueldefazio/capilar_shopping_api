@@ -16,6 +16,7 @@ exports.OrdersService = void 0;
 const common_1 = require("@nestjs/common");
 const typeorm_1 = require("@nestjs/typeorm");
 const typeorm_2 = require("typeorm");
+const crypto_1 = require("crypto");
 const order_entity_1 = require("./entities/order.entity");
 const order_item_entity_1 = require("./entities/order-item.entity");
 const order_shipping_entity_1 = require("./entities/order-shipping.entity");
@@ -27,6 +28,7 @@ const order_status_enum_1 = require("../../common/enums/order-status.enum");
 const payment_enum_1 = require("../../common/enums/payment.enum");
 const delivery_method_enum_1 = require("../../common/enums/delivery-method.enum");
 const slug_util_1 = require("../../common/utils/slug.util");
+const emails_service_1 = require("../emails/emails.service");
 let OrdersService = class OrdersService {
     orderRepo;
     itemRepo;
@@ -35,7 +37,8 @@ let OrdersService = class OrdersService {
     productsService;
     shippingService;
     dataSource;
-    constructor(orderRepo, itemRepo, shippingRepo, customersService, productsService, shippingService, dataSource) {
+    emailsService;
+    constructor(orderRepo, itemRepo, shippingRepo, customersService, productsService, shippingService, dataSource, emailsService) {
         this.orderRepo = orderRepo;
         this.itemRepo = itemRepo;
         this.shippingRepo = shippingRepo;
@@ -43,6 +46,14 @@ let OrdersService = class OrdersService {
         this.productsService = productsService;
         this.shippingService = shippingService;
         this.dataSource = dataSource;
+        this.emailsService = emailsService;
+    }
+    async onModuleInit() {
+        await this.orderRepo.query(`
+      UPDATE orders
+      SET publicToken = SHA2(CONCAT(id, '-', orderNumber, '-', createdAt), 256)
+      WHERE publicToken IS NULL OR publicToken = ''
+    `);
     }
     findAll() {
         return this.orderRepo.find({
@@ -65,8 +76,19 @@ let OrdersService = class OrdersService {
             throw new common_1.NotFoundException(`Order #${id} not found`);
         return order;
     }
+    async findOnePublic(id, publicToken) {
+        if (!publicToken)
+            throw new common_1.NotFoundException(`Order #${id} not found`);
+        const order = await this.orderRepo.findOne({
+            where: { id, publicToken },
+            relations: ['customer', 'items', 'payments', 'shipping'],
+        });
+        if (!order)
+            throw new common_1.NotFoundException(`Order #${id} not found`);
+        return order;
+    }
     async create(dto) {
-        return this.dataSource.transaction(async (manager) => {
+        const order = await this.dataSource.transaction(async (manager) => {
             const customer = await this.customersService.findOrCreateByEmail(dto.customer);
             const resolvedItems = [];
             for (const itemDto of dto.items) {
@@ -94,12 +116,15 @@ let OrdersService = class OrdersService {
             const orderNumber = (0, slug_util_1.generateOrderNumber)();
             const order = manager.create(order_entity_1.Order, {
                 orderNumber,
+                publicToken: (0, crypto_1.randomBytes)(32).toString('hex'),
                 customerId: customer.id,
                 subtotal: Math.round(subtotal * 100) / 100,
                 shippingCost: Math.round(shippingCost * 100) / 100,
                 shippingZone,
                 total,
-                status: order_status_enum_1.OrderStatus.CREATED,
+                status: dto.paymentMethod === payment_enum_1.PaymentMethod.TRANSFER
+                    ? order_status_enum_1.OrderStatus.PENDING_PAYMENT
+                    : order_status_enum_1.OrderStatus.CREATED,
                 paymentMethod: dto.paymentMethod,
                 deliveryMethod: dto.deliveryMethod,
                 notes: dto.notes ?? '',
@@ -127,15 +152,14 @@ let OrdersService = class OrdersService {
                 });
                 savedShipping = await manager.save(order_shipping_entity_1.OrderShipping, shippingRecord);
             }
-            for (const { product, quantity } of resolvedItems) {
-                await manager.decrement(product_entity_1.Product, { id: product.id }, 'stock', quantity);
-            }
             savedOrder.customer = customer;
             savedOrder.items = savedItems;
             savedOrder.shipping = savedShipping;
             savedOrder.payments = [];
             return savedOrder;
         });
+        await this.emailsService.sendOrderCreated(order);
+        return order;
     }
     async updateStatus(id, dto) {
         const order = await this.findOne(id);
@@ -144,20 +168,40 @@ let OrdersService = class OrdersService {
         return this.findOne(id);
     }
     async updatePaymentStatus(id, dto) {
-        const order = await this.findOne(id);
-        const wasNotPaid = order.paymentStatus !== payment_enum_1.PaymentStatus.APPROVED;
-        order.paymentStatus = dto.paymentStatus;
-        if (dto.paymentStatus === payment_enum_1.PaymentStatus.APPROVED && wasNotPaid) {
-            order.status = order_status_enum_1.OrderStatus.PAID;
+        const result = await this.dataSource.transaction(async (manager) => {
+            const order = await manager.findOne(order_entity_1.Order, {
+                where: { id },
+                relations: ['customer', 'items', 'payments', 'shipping'],
+                lock: { mode: 'pessimistic_write' },
+            });
+            if (!order)
+                throw new common_1.NotFoundException(`Order #${id} not found`);
+            const shouldDeductStock = dto.paymentStatus === payment_enum_1.PaymentStatus.APPROVED && !order.stockDeducted;
+            if (shouldDeductStock) {
+                await this.deductStockForOrder(manager, order);
+                order.stockDeducted = true;
+            }
+            order.paymentStatus = dto.paymentStatus;
+            if (dto.paymentStatus === payment_enum_1.PaymentStatus.APPROVED) {
+                order.status = order_status_enum_1.OrderStatus.PAID;
+            }
+            await manager.save(order_entity_1.Order, order);
+            return { order, paymentApprovedNow: shouldDeductStock };
+        });
+        const updated = await this.findOne(result.order.id);
+        if (result.paymentApprovedNow) {
+            await this.emailsService.sendPaymentApproved(updated);
         }
-        await this.orderRepo.save(order);
-        return this.findOne(id);
+        return updated;
     }
     async updateShipping(id, dto) {
         const order = await this.findOne(id);
         if (!order.shipping) {
             throw new common_1.BadRequestException(`Order #${id} has no shipping record`);
         }
+        const previousShippingStatus = order.shipping.status;
+        const previousTrackingNumber = order.shipping.trackingNumber;
+        const previousTrackingUrl = order.shipping.trackingUrl;
         if (dto.shippingStatus !== undefined)
             order.shipping.status = dto.shippingStatus;
         if (dto.trackingNumber !== undefined)
@@ -172,7 +216,32 @@ let OrdersService = class OrdersService {
         }
         await this.shippingRepo.save(order.shipping);
         await this.orderRepo.save(order);
-        return this.findOne(id);
+        const updated = await this.findOne(id);
+        const shippingChanged = previousShippingStatus !== updated.shipping?.status ||
+            previousTrackingNumber !== updated.shipping?.trackingNumber ||
+            previousTrackingUrl !== updated.shipping?.trackingUrl;
+        if (shippingChanged) {
+            await this.emailsService.sendShippingUpdated(updated);
+        }
+        return updated;
+    }
+    async deductStockForOrder(manager, order) {
+        for (const item of order.items) {
+            if (!item.productId) {
+                throw new common_1.BadRequestException(`Product reference missing for item "${item.productName}"`);
+            }
+            const product = await manager.findOne(product_entity_1.Product, {
+                where: { id: item.productId },
+                lock: { mode: 'pessimistic_write' },
+            });
+            if (!product)
+                throw new common_1.NotFoundException(`Product #${item.productId} not found`);
+            if (product.stock < item.quantity) {
+                throw new common_1.BadRequestException(`Insufficient stock for "${product.name}". Available: ${product.stock}`);
+            }
+            product.stock -= item.quantity;
+            await manager.save(product_entity_1.Product, product);
+        }
     }
 };
 exports.OrdersService = OrdersService;
@@ -187,6 +256,7 @@ exports.OrdersService = OrdersService = __decorate([
         customers_service_1.CustomersService,
         products_service_1.ProductsService,
         shipping_service_1.ShippingService,
-        typeorm_2.DataSource])
+        typeorm_2.DataSource,
+        emails_service_1.EmailsService])
 ], OrdersService);
 //# sourceMappingURL=orders.service.js.map

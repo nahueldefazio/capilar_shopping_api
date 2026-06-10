@@ -22,6 +22,7 @@ const shipping_zone_enum_1 = require("../../../common/enums/shipping-zone.enum")
 let Order = class Order {
     id;
     orderNumber;
+    publicToken;
     customer;
     customerId;
     items;
@@ -34,6 +35,7 @@ let Order = class Order {
     status;
     paymentMethod;
     paymentStatus;
+    stockDeducted;
     deliveryMethod;
     notes;
     createdAt;
@@ -48,6 +50,10 @@ __decorate([
     (0, typeorm_1.Column)({ length: 30, unique: true }),
     __metadata("design:type", String)
 ], Order.prototype, "orderNumber", void 0);
+__decorate([
+    (0, typeorm_1.Column)({ type: 'varchar', length: 64, nullable: true }),
+    __metadata("design:type", Object)
+], Order.prototype, "publicToken", void 0);
 __decorate([
     (0, typeorm_1.ManyToOne)(() => customer_entity_1.Customer, (customer) => customer.orders, { eager: true, nullable: true }),
     (0, typeorm_1.JoinColumn)({ name: 'customerId' }),
@@ -97,6 +103,10 @@ __decorate([
     (0, typeorm_1.Column)({ type: 'enum', enum: payment_enum_1.PaymentStatus, default: payment_enum_1.PaymentStatus.PENDING }),
     __metadata("design:type", String)
 ], Order.prototype, "paymentStatus", void 0);
+__decorate([
+    (0, typeorm_1.Column)({ default: false }),
+    __metadata("design:type", Boolean)
+], Order.prototype, "stockDeducted", void 0);
 __decorate([
     (0, typeorm_1.Column)({ type: 'enum', enum: delivery_method_enum_1.DeliveryMethod, default: delivery_method_enum_1.DeliveryMethod.HOME_DELIVERY }),
     __metadata("design:type", String)

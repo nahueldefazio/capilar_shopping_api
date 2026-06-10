@@ -18,8 +18,8 @@ let AuthService = class AuthService {
         this.jwtService = jwtService;
     }
     login(dto) {
-        const validUsername = process.env.ADMIN_USERNAME ?? 'admin';
-        const validPassword = process.env.ADMIN_PASSWORD ?? 'admin123';
+        const validUsername = process.env.ADMIN_USERNAME ?? (process.env.NODE_ENV === 'production' ? '' : 'admin');
+        const validPassword = process.env.ADMIN_PASSWORD ?? (process.env.NODE_ENV === 'production' ? '' : 'admin123');
         if (dto.username !== validUsername || dto.password !== validPassword) {
             throw new common_1.UnauthorizedException('Usuario o contraseña incorrectos');
         }

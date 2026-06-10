@@ -2,9 +2,11 @@ import {
   Injectable,
   NotFoundException,
   BadRequestException,
+  OnModuleInit,
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository, DataSource } from 'typeorm';
+import { Repository, DataSource, EntityManager } from 'typeorm';
+import { randomBytes } from 'crypto';
 import { Order } from './entities/order.entity';
 import { OrderItem } from './entities/order-item.entity';
 import { OrderShipping } from './entities/order-shipping.entity';
@@ -15,12 +17,13 @@ import { CustomersService } from '../customers/customers.service';
 import { ProductsService } from '../products/products.service';
 import { ShippingService } from '../shipping/shipping.service';
 import { OrderStatus } from '../../common/enums/order-status.enum';
-import { PaymentStatus } from '../../common/enums/payment.enum';
+import { PaymentMethod, PaymentStatus } from '../../common/enums/payment.enum';
 import { DeliveryMethod } from '../../common/enums/delivery-method.enum';
 import { generateOrderNumber } from '../../common/utils/slug.util';
+import { EmailsService } from '../emails/emails.service';
 
 @Injectable()
-export class OrdersService {
+export class OrdersService implements OnModuleInit {
   constructor(
     @InjectRepository(Order)
     private readonly orderRepo: Repository<Order>,
@@ -32,7 +35,16 @@ export class OrdersService {
     private readonly productsService: ProductsService,
     private readonly shippingService: ShippingService,
     private readonly dataSource: DataSource,
+    private readonly emailsService: EmailsService,
   ) {}
+
+  async onModuleInit(): Promise<void> {
+    await this.orderRepo.query(`
+      UPDATE orders
+      SET publicToken = SHA2(CONCAT(id, '-', orderNumber, '-', createdAt), 256)
+      WHERE publicToken IS NULL OR publicToken = ''
+    `);
+  }
 
   findAll(): Promise<Order[]> {
     return this.orderRepo.find({
@@ -57,8 +69,19 @@ export class OrdersService {
     return order;
   }
 
+  async findOnePublic(id: number, publicToken: string): Promise<Order> {
+    if (!publicToken) throw new NotFoundException(`Order #${id} not found`);
+
+    const order = await this.orderRepo.findOne({
+      where: { id, publicToken },
+      relations: ['customer', 'items', 'payments', 'shipping'],
+    });
+    if (!order) throw new NotFoundException(`Order #${id} not found`);
+    return order;
+  }
+
   async create(dto: CreateOrderDto): Promise<Order> {
-    return this.dataSource.transaction(async (manager) => {
+    const order = await this.dataSource.transaction(async (manager) => {
       // 1. Resolve or create customer
       const customer = await this.customersService.findOrCreateByEmail(dto.customer);
 
@@ -115,12 +138,16 @@ export class OrdersService {
       // 6. Build order
       const order = manager.create(Order, {
         orderNumber,
+        publicToken: randomBytes(32).toString('hex'),
         customerId: customer.id,
         subtotal: Math.round(subtotal * 100) / 100,
         shippingCost: Math.round(shippingCost * 100) / 100,
         shippingZone,
         total,
-        status: OrderStatus.CREATED,
+        status:
+          dto.paymentMethod === PaymentMethod.TRANSFER
+            ? OrderStatus.PENDING_PAYMENT
+            : OrderStatus.CREATED,
         paymentMethod: dto.paymentMethod,
         deliveryMethod: dto.deliveryMethod,
         notes: dto.notes ?? '',
@@ -155,17 +182,15 @@ export class OrdersService {
         savedShipping = await manager.save(OrderShipping, shippingRecord);
       }
 
-      // 9. Decrement stock atomically
-      for (const { product, quantity } of resolvedItems) {
-        await manager.decrement(Product, { id: product.id }, 'stock', quantity);
-      }
-
       savedOrder.customer = customer;
       savedOrder.items = savedItems;
       savedOrder.shipping = savedShipping as OrderShipping;
       savedOrder.payments = [];
       return savedOrder;
     });
+
+    await this.emailsService.sendOrderCreated(order);
+    return order;
   }
 
   async updateStatus(id: number, dto: UpdateOrderStatusDto): Promise<Order> {
@@ -176,17 +201,37 @@ export class OrdersService {
   }
 
   async updatePaymentStatus(id: number, dto: UpdatePaymentStatusDto): Promise<Order> {
-    const order = await this.findOne(id);
-    const wasNotPaid = order.paymentStatus !== PaymentStatus.APPROVED;
+    const result = await this.dataSource.transaction(async (manager) => {
+      const order = await manager.findOne(Order, {
+        where: { id },
+        relations: ['customer', 'items', 'payments', 'shipping'],
+        lock: { mode: 'pessimistic_write' },
+      });
+      if (!order) throw new NotFoundException(`Order #${id} not found`);
 
-    order.paymentStatus = dto.paymentStatus;
+      const shouldDeductStock =
+        dto.paymentStatus === PaymentStatus.APPROVED && !order.stockDeducted;
 
-    if (dto.paymentStatus === PaymentStatus.APPROVED && wasNotPaid) {
-      order.status = OrderStatus.PAID;
+      if (shouldDeductStock) {
+        await this.deductStockForOrder(manager, order);
+        order.stockDeducted = true;
+      }
+
+      order.paymentStatus = dto.paymentStatus;
+
+      if (dto.paymentStatus === PaymentStatus.APPROVED) {
+        order.status = OrderStatus.PAID;
+      }
+
+      await manager.save(Order, order);
+      return { order, paymentApprovedNow: shouldDeductStock };
+    });
+
+    const updated = await this.findOne(result.order.id);
+    if (result.paymentApprovedNow) {
+      await this.emailsService.sendPaymentApproved(updated);
     }
-
-    await this.orderRepo.save(order);
-    return this.findOne(id);
+    return updated;
   }
 
   async updateShipping(id: number, dto: UpdateShippingDto): Promise<Order> {
@@ -195,6 +240,10 @@ export class OrdersService {
     if (!order.shipping) {
       throw new BadRequestException(`Order #${id} has no shipping record`);
     }
+
+    const previousShippingStatus = order.shipping.status;
+    const previousTrackingNumber = order.shipping.trackingNumber;
+    const previousTrackingUrl = order.shipping.trackingUrl;
 
     if (dto.shippingStatus !== undefined) order.shipping.status = dto.shippingStatus;
     if (dto.trackingNumber !== undefined) order.shipping.trackingNumber = dto.trackingNumber;
@@ -209,6 +258,40 @@ export class OrdersService {
 
     await this.shippingRepo.save(order.shipping);
     await this.orderRepo.save(order);
-    return this.findOne(id);
+    const updated = await this.findOne(id);
+
+    const shippingChanged =
+      previousShippingStatus !== updated.shipping?.status ||
+      previousTrackingNumber !== updated.shipping?.trackingNumber ||
+      previousTrackingUrl !== updated.shipping?.trackingUrl;
+
+    if (shippingChanged) {
+      await this.emailsService.sendShippingUpdated(updated);
+    }
+
+    return updated;
+  }
+
+  private async deductStockForOrder(manager: EntityManager, order: Order): Promise<void> {
+    for (const item of order.items) {
+      if (!item.productId) {
+        throw new BadRequestException(`Product reference missing for item "${item.productName}"`);
+      }
+
+      const product = await manager.findOne(Product, {
+        where: { id: item.productId },
+        lock: { mode: 'pessimistic_write' },
+      });
+
+      if (!product) throw new NotFoundException(`Product #${item.productId} not found`);
+      if (product.stock < item.quantity) {
+        throw new BadRequestException(
+          `Insufficient stock for "${product.name}". Available: ${product.stock}`,
+        );
+      }
+
+      product.stock -= item.quantity;
+      await manager.save(Product, product);
+    }
   }
 }

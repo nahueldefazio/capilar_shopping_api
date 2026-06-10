@@ -9,6 +9,7 @@ import { ShippingZone } from '../../../common/enums/shipping-zone.enum';
 export declare class Order {
     id: number;
     orderNumber: string;
+    publicToken: string | null;
     customer: Customer;
     customerId: number;
     items: OrderItem[];
@@ -21,6 +22,7 @@ export declare class Order {
     status: OrderStatus;
     paymentMethod: PaymentMethod;
     paymentStatus: PaymentStatus;
+    stockDeducted: boolean;
     deliveryMethod: DeliveryMethod;
     notes: string;
     createdAt: Date;

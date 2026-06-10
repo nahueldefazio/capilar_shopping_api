@@ -9,6 +9,7 @@ import { CustomersModule } from '../customers/customers.module';
 import { ProductsModule } from '../products/products.module';
 import { ShippingModule } from '../shipping/shipping.module';
 import { AuthModule } from '../auth/auth.module';
+import { EmailsModule } from '../emails/emails.module';
 
 @Module({
   imports: [
@@ -17,6 +18,7 @@ import { AuthModule } from '../auth/auth.module';
     ProductsModule,
     ShippingModule,
     AuthModule,
+    EmailsModule,
   ],
   controllers: [OrdersController],
   providers: [OrdersService],

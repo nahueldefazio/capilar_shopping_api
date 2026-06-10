@@ -7,8 +7,10 @@ export class AuthService {
   constructor(private jwtService: JwtService) {}
 
   login(dto: LoginDto): { access_token: string } {
-    const validUsername = process.env.ADMIN_USERNAME ?? 'admin';
-    const validPassword = process.env.ADMIN_PASSWORD ?? 'admin123';
+    const validUsername =
+      process.env.ADMIN_USERNAME ?? (process.env.NODE_ENV === 'production' ? '' : 'admin');
+    const validPassword =
+      process.env.ADMIN_PASSWORD ?? (process.env.NODE_ENV === 'production' ? '' : 'admin123');
 
     if (dto.username !== validUsername || dto.password !== validPassword) {
       throw new UnauthorizedException('Usuario o contraseña incorrectos');

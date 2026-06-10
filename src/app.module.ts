@@ -13,6 +13,7 @@ import { ShippingModule } from './modules/shipping/shipping.module';
 import { HealthModule } from './modules/health/health.module';
 import { AuthModule } from './modules/auth/auth.module';
 import { UploadsModule } from './modules/uploads/uploads.module';
+import { LegalModule } from './modules/legal/legal.module';
 
 @Module({
   imports: [
@@ -37,6 +38,7 @@ import { UploadsModule } from './modules/uploads/uploads.module';
     PaymentsModule,
     CheckoutModule,
     ShippingModule,
+    LegalModule,
     HealthModule,
   ],
 })

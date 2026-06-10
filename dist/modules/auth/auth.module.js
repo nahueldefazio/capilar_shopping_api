@@ -20,7 +20,12 @@ exports.AuthModule = AuthModule = __decorate([
         imports: [
             jwt_1.JwtModule.registerAsync({
                 useFactory: () => ({
-                    secret: process.env.JWT_SECRET ?? 'capilar_secret_key',
+                    secret: (() => {
+                        if (process.env.NODE_ENV === 'production' && !process.env.JWT_SECRET) {
+                            throw new Error('JWT_SECRET es obligatorio en produccion');
+                        }
+                        return process.env.JWT_SECRET ?? 'capilar_secret_key';
+                    })(),
                     signOptions: { expiresIn: '8h' },
                 }),
             }),

@@ -1,4 +1,4 @@
-import { Controller, Post, Get, Body, Param, ParseIntPipe } from '@nestjs/common';
+import { Controller, Post, Get, Body, Param, ParseIntPipe, Query } from '@nestjs/common';
 import { OrdersService } from '../orders/orders.service';
 import { CreateOrderDto } from './dto/checkout.dto';
 
@@ -12,7 +12,7 @@ export class CheckoutController {
   }
 
   @Get('order/:id')
-  getOrder(@Param('id', ParseIntPipe) id: number) {
-    return this.ordersService.findOne(id);
+  getOrder(@Param('id', ParseIntPipe) id: number, @Query('token') token: string) {
+    return this.ordersService.findOnePublic(id, token);
   }
 }
