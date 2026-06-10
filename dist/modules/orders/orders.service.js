@@ -102,16 +102,21 @@ let OrdersService = class OrdersService {
                 resolvedItems.push({ product, quantity: itemDto.quantity });
             }
             const subtotal = resolvedItems.reduce((sum, { product, quantity }) => sum + Number(product.price) * quantity, 0);
-            const needsShipping = dto.deliveryMethod === delivery_method_enum_1.DeliveryMethod.HOME_DELIVERY;
+            const needsShipping = dto.deliveryMethod === delivery_method_enum_1.DeliveryMethod.HOME_DELIVERY ||
+                dto.deliveryMethod === delivery_method_enum_1.DeliveryMethod.PICKUP;
             let shippingCost = 0;
             let shippingZone = null;
             if (needsShipping) {
-                if (!dto.shipping) {
+                if (dto.deliveryMethod === delivery_method_enum_1.DeliveryMethod.HOME_DELIVERY && !dto.shipping) {
                     throw new common_1.BadRequestException('Shipping address is required for home delivery');
                 }
-                const totalWeightGrams = resolvedItems.reduce((sum, { product, quantity }) => sum + (product.weightGrams ?? 0) * quantity, 0);
-                const province = dto.shipping.province;
-                const shippingResult = await this.shippingService.calculateFromWeight(province, totalWeightGrams, dto.deliveryMethod, dto.shipping.city);
+                const province = dto.deliveryMethod === delivery_method_enum_1.DeliveryMethod.HOME_DELIVERY
+                    ? dto.shipping.province
+                    : (dto.customer.province ?? '');
+                const city = dto.deliveryMethod === delivery_method_enum_1.DeliveryMethod.HOME_DELIVERY
+                    ? dto.shipping.city
+                    : (dto.customer.city ?? '');
+                const shippingResult = this.shippingService.calculateFlat(province, city, dto.deliveryMethod);
                 shippingCost = shippingResult.shippingCost ?? 0;
                 shippingZone = shippingResult.zone;
             }

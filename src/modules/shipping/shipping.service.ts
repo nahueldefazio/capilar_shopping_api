@@ -1,8 +1,4 @@
-import { Injectable, Logger, OnModuleInit } from '@nestjs/common';
-import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
-import { ShippingRate } from './entities/shipping-rate.entity';
-import { Product } from '../products/entities/product.entity';
+import { Injectable } from '@nestjs/common';
 import { CalculateShippingDto } from './dto/calculate-shipping.dto';
 import { ShippingZone } from '../../common/enums/shipping-zone.enum';
 
@@ -14,22 +10,11 @@ export interface ShippingCalculationResult {
   message: string | null;
 }
 
-const DEFAULT_RATES: Array<{
-  zone: ShippingZone;
-  minWeightGrams: number;
-  maxWeightGrams: number;
-  price: number;
-}> = [
-  { zone: ShippingZone.CABA,     minWeightGrams: 0,    maxWeightGrams: 1000,  price: 19000 },
-  { zone: ShippingZone.CABA,     minWeightGrams: 1001, maxWeightGrams: 3000,  price: 23000 },
-  { zone: ShippingZone.CABA,     minWeightGrams: 3001, maxWeightGrams: 5000,  price: 27000 },
-  { zone: ShippingZone.GBA,      minWeightGrams: 0,    maxWeightGrams: 1000,  price: 22000 },
-  { zone: ShippingZone.GBA,      minWeightGrams: 1001, maxWeightGrams: 3000,  price: 27000 },
-  { zone: ShippingZone.GBA,      minWeightGrams: 3001, maxWeightGrams: 5000,  price: 32000 },
-  { zone: ShippingZone.INTERIOR, minWeightGrams: 0,    maxWeightGrams: 1000,  price: 26000 },
-  { zone: ShippingZone.INTERIOR, minWeightGrams: 1001, maxWeightGrams: 3000,  price: 34000 },
-  { zone: ShippingZone.INTERIOR, minWeightGrams: 3001, maxWeightGrams: 5000,  price: 42000 },
-];
+// Tarifas planas hardcodeadas por zona y método de entrega
+const FLAT_RATES = {
+  home_delivery: { CABA_GBA: 11000, INTERIOR: 13000 },
+  pickup:        { CABA_GBA:  7000, INTERIOR:  9000 },
+} as const;
 
 const GBA_LOCALITIES = new Set([
   'almirante brown',
@@ -95,41 +80,21 @@ const GBA_LOCALITIES = new Set([
   'olivos',
 ]);
 
-function normalizeZoneText(value: string): string {
+function normalizeText(value: string): string {
   return value
     .trim()
     .toLowerCase()
     .normalize('NFD')
-    .replace(/[\u0300-\u036f]/g, '');
+    .replace(/[̀-ͯ]/g, '');
 }
 
 @Injectable()
-export class ShippingService implements OnModuleInit {
-  private readonly logger = new Logger(ShippingService.name);
-
-  constructor(
-    @InjectRepository(ShippingRate)
-    private readonly rateRepo: Repository<ShippingRate>,
-    @InjectRepository(Product)
-    private readonly productRepo: Repository<Product>,
-  ) {}
-
-  async onModuleInit(): Promise<void> {
-    const count = await this.rateRepo.count();
-    if (count === 0) {
-      await this.rateRepo.save(DEFAULT_RATES.map((r) => this.rateRepo.create(r)));
-      this.logger.log('Shipping rates seeded.');
-    }
-  }
-
+export class ShippingService {
   detectZone(province: string, city = ''): ShippingZone {
-    const normalized = normalizeZoneText(province);
-    const normalizedCity = normalizeZoneText(city);
+    const normalized = normalizeText(province);
+    const normalizedCity = normalizeText(city);
 
-    if (
-      normalized === 'ciudad autonoma de buenos aires' ||
-      normalized === 'caba'
-    ) {
+    if (normalized === 'ciudad autonoma de buenos aires' || normalized === 'caba') {
       return ShippingZone.CABA;
     }
     if (normalized === 'buenos aires') {
@@ -138,56 +103,10 @@ export class ShippingService implements OnModuleInit {
     return ShippingZone.INTERIOR;
   }
 
-  async calculateFromWeight(
-    province: string,
-    totalWeightGrams: number,
-    deliveryMethod = 'home_delivery',
-    city = '',
-  ): Promise<ShippingCalculationResult> {
-    if (deliveryMethod === 'pickup' || deliveryMethod === 'coordinate_by_whatsapp') {
+  calculateFlat(province: string, city: string, deliveryMethod: string): ShippingCalculationResult {
+    if (deliveryMethod === 'coordinate_by_whatsapp') {
       return {
         shippingMethod: deliveryMethod,
-        zone: null,
-        totalWeightGrams,
-        shippingCost: 0,
-        message: null,
-      };
-    }
-
-    if (totalWeightGrams > 5000) {
-      return {
-        shippingMethod: 'coordinate_by_whatsapp',
-        zone: ShippingZone.A_COORDINAR,
-        totalWeightGrams,
-        shippingCost: null,
-        message: 'El envío se coordina por WhatsApp por superar los 5 kg',
-      };
-    }
-
-    const zone = this.detectZone(province, city);
-    const rate = await this.rateRepo
-      .createQueryBuilder('r')
-      .where('r.zone = :zone', { zone })
-      .andWhere('r.minWeightGrams <= :w', { w: totalWeightGrams })
-      .andWhere('r.maxWeightGrams >= :w', { w: totalWeightGrams })
-      .andWhere('r.active = true')
-      .getOne();
-
-    return {
-      shippingMethod: deliveryMethod,
-      zone,
-      totalWeightGrams,
-      shippingCost: rate ? Number(rate.price) : 0,
-      message: null,
-    };
-  }
-
-  async calculate(dto: CalculateShippingDto): Promise<ShippingCalculationResult> {
-    const method = dto.deliveryMethod ?? 'home_delivery';
-
-    if (method === 'pickup' || method === 'coordinate_by_whatsapp') {
-      return {
-        shippingMethod: method,
         zone: null,
         totalWeightGrams: 0,
         shippingCost: 0,
@@ -195,16 +114,41 @@ export class ShippingService implements OnModuleInit {
       };
     }
 
-    const products = await this.productRepo.findByIds(dto.items.map((i) => i.productId));
-    const totalWeightGrams = dto.items.reduce((sum, item) => {
-      const product = products.find((p) => p.id === item.productId);
-      return sum + (product?.weightGrams ?? 0) * item.quantity;
-    }, 0);
+    const zone = this.detectZone(province, city);
+    const rates = FLAT_RATES[deliveryMethod as keyof typeof FLAT_RATES];
 
-    return this.calculateFromWeight(dto.province, totalWeightGrams, method, dto.city);
+    if (!rates) {
+      return {
+        shippingMethod: deliveryMethod,
+        zone,
+        totalWeightGrams: 0,
+        shippingCost: 0,
+        message: null,
+      };
+    }
+
+    const isCabaOrGba = zone === ShippingZone.CABA || zone === ShippingZone.GBA;
+    const shippingCost = isCabaOrGba ? rates.CABA_GBA : rates.INTERIOR;
+
+    return {
+      shippingMethod: deliveryMethod,
+      zone,
+      totalWeightGrams: 0,
+      shippingCost,
+      message: null,
+    };
   }
 
-  async getRates(): Promise<ShippingRate[]> {
-    return this.rateRepo.find({ order: { zone: 'ASC', minWeightGrams: 'ASC' } });
+  calculate(dto: CalculateShippingDto): ShippingCalculationResult {
+    return this.calculateFlat(dto.province, dto.city ?? '', dto.deliveryMethod ?? 'home_delivery');
+  }
+
+  getRates(): Array<{ zone: string; method: string; price: number }> {
+    return [
+      { zone: 'CABA/GBA', method: 'home_delivery', price: FLAT_RATES.home_delivery.CABA_GBA },
+      { zone: 'CABA/GBA', method: 'pickup',        price: FLAT_RATES.pickup.CABA_GBA },
+      { zone: 'Interior', method: 'home_delivery', price: FLAT_RATES.home_delivery.INTERIOR },
+      { zone: 'Interior', method: 'pickup',        price: FLAT_RATES.pickup.INTERIOR },
+    ];
   }
 }

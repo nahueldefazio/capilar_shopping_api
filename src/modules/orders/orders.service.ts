@@ -110,26 +110,26 @@ export class OrdersService implements OnModuleInit {
         0,
       );
 
-      // 4. Calculate shipping cost server-side
-      const needsShipping = dto.deliveryMethod === DeliveryMethod.HOME_DELIVERY;
+      // 4. Calculate shipping cost server-side (tarifas planas por zona)
+      const needsShipping =
+        dto.deliveryMethod === DeliveryMethod.HOME_DELIVERY ||
+        dto.deliveryMethod === DeliveryMethod.PICKUP;
       let shippingCost = 0;
       let shippingZone = null;
 
       if (needsShipping) {
-        if (!dto.shipping) {
+        if (dto.deliveryMethod === DeliveryMethod.HOME_DELIVERY && !dto.shipping) {
           throw new BadRequestException('Shipping address is required for home delivery');
         }
-        const totalWeightGrams = resolvedItems.reduce(
-          (sum, { product, quantity }) => sum + (product.weightGrams ?? 0) * quantity,
-          0,
-        );
-        const province = dto.shipping.province;
-        const shippingResult = await this.shippingService.calculateFromWeight(
-          province,
-          totalWeightGrams,
-          dto.deliveryMethod,
-          dto.shipping.city,
-        );
+        const province =
+          dto.deliveryMethod === DeliveryMethod.HOME_DELIVERY
+            ? dto.shipping!.province
+            : (dto.customer.province ?? '');
+        const city =
+          dto.deliveryMethod === DeliveryMethod.HOME_DELIVERY
+            ? dto.shipping!.city
+            : (dto.customer.city ?? '');
+        const shippingResult = this.shippingService.calculateFlat(province, city, dto.deliveryMethod);
         shippingCost = shippingResult.shippingCost ?? 0;
         shippingZone = shippingResult.zone;
       }

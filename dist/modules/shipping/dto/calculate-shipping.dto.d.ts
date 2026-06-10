@@ -4,8 +4,8 @@ export declare class ShippingItemDto {
 }
 export declare class CalculateShippingDto {
     province: string;
-    city: string;
-    postalCode: string;
-    items: ShippingItemDto[];
+    city?: string;
+    postalCode?: string;
+    items?: ShippingItemDto[];
     deliveryMethod?: string;
 }

@@ -7,7 +7,6 @@ import {
   IsString,
   Min,
   ValidateNested,
-  ArrayMinSize,
 } from 'class-validator';
 import { Type } from 'class-transformer';
 
@@ -29,18 +28,18 @@ export class CalculateShippingDto {
   province: string;
 
   @IsString()
-  @IsNotEmpty()
-  city: string;
+  @IsOptional()
+  city?: string;
 
   @IsString()
-  @IsNotEmpty()
-  postalCode: string;
+  @IsOptional()
+  postalCode?: string;
 
   @IsArray()
-  @ArrayMinSize(1)
+  @IsOptional()
   @ValidateNested({ each: true })
   @Type(() => ShippingItemDto)
-  items: ShippingItemDto[];
+  items?: ShippingItemDto[];
 
   @IsString()
   @IsOptional()
