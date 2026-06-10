@@ -1,4 +1,5 @@
-import { IsString, IsNotEmpty, MinLength, IsOptional, IsBoolean } from 'class-validator';
+import { Type } from 'class-transformer';
+import { IsString, IsNotEmpty, MinLength, IsOptional, IsBoolean, IsInt, Min } from 'class-validator';
 
 export class CreateCategoryDto {
   @IsString()
@@ -13,4 +14,10 @@ export class CreateCategoryDto {
   @IsBoolean()
   @IsOptional()
   isActive?: boolean;
+
+  @IsInt()
+  @Min(1)
+  @IsOptional()
+  @Type(() => Number)
+  parentId?: number;
 }

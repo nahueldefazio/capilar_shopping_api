@@ -9,7 +9,7 @@ exports.default = (0, config_1.registerAs)('database', () => ({
     password: process.env.DB_PASSWORD ?? '',
     database: process.env.DB_DATABASE ?? 'capilar_shopping',
     entities: [__dirname + '/../**/*.entity{.ts,.js}'],
-    synchronize: process.env.NODE_ENV !== 'production',
+    synchronize: process.env.DB_SYNCHRONIZE === 'true',
     logging: process.env.NODE_ENV === 'development',
     charset: 'utf8mb4',
 }));

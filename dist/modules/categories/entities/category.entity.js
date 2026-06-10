@@ -17,6 +17,9 @@ let Category = class Category {
     name;
     slug;
     isActive;
+    parent;
+    parentId;
+    children;
     products;
     createdAt;
     updatedAt;
@@ -38,6 +41,19 @@ __decorate([
     (0, typeorm_1.Column)({ default: true }),
     __metadata("design:type", Boolean)
 ], Category.prototype, "isActive", void 0);
+__decorate([
+    (0, typeorm_1.ManyToOne)(() => Category, (category) => category.children, { nullable: true, onDelete: 'SET NULL' }),
+    (0, typeorm_1.JoinColumn)({ name: 'parentId' }),
+    __metadata("design:type", Object)
+], Category.prototype, "parent", void 0);
+__decorate([
+    (0, typeorm_1.Column)({ nullable: true }),
+    __metadata("design:type", Object)
+], Category.prototype, "parentId", void 0);
+__decorate([
+    (0, typeorm_1.OneToMany)(() => Category, (category) => category.parent),
+    __metadata("design:type", Array)
+], Category.prototype, "children", void 0);
 __decorate([
     (0, typeorm_1.OneToMany)(() => product_entity_1.Product, (product) => product.category),
     __metadata("design:type", Array)

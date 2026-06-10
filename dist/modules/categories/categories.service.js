@@ -18,13 +18,26 @@ const typeorm_1 = require("@nestjs/typeorm");
 const typeorm_2 = require("typeorm");
 const category_entity_1 = require("./entities/category.entity");
 const slug_util_1 = require("../../common/utils/slug.util");
+const CATEGORY_ORDER = ['particulares', 'peluquerias', 'mayorista', 'plasma'];
 let CategoriesService = class CategoriesService {
     categoryRepo;
     constructor(categoryRepo) {
         this.categoryRepo = categoryRepo;
     }
     async findAll() {
-        return this.categoryRepo.find({ where: { isActive: true }, order: { name: 'ASC' } });
+        const categories = await this.categoryRepo.find({ where: { isActive: true } });
+        return categories.sort((a, b) => {
+            const parentSort = Number(a.parentId ?? 0) - Number(b.parentId ?? 0);
+            if (parentSort !== 0)
+                return parentSort;
+            const aIndex = CATEGORY_ORDER.indexOf(a.slug);
+            const bIndex = CATEGORY_ORDER.indexOf(b.slug);
+            if (aIndex !== -1 || bIndex !== -1) {
+                return (aIndex === -1 ? Number.MAX_SAFE_INTEGER : aIndex) -
+                    (bIndex === -1 ? Number.MAX_SAFE_INTEGER : bIndex);
+            }
+            return a.name.localeCompare(b.name, 'es');
+        });
     }
     async findOne(id) {
         const category = await this.categoryRepo.findOne({ where: { id } });
@@ -37,6 +50,8 @@ let CategoriesService = class CategoriesService {
         const exists = await this.categoryRepo.findOne({ where: { slug } });
         if (exists)
             throw new common_1.ConflictException(`Slug "${slug}" already exists`);
+        if (dto.parentId)
+            await this.findOne(dto.parentId);
         const category = this.categoryRepo.create({ ...dto, slug });
         return this.categoryRepo.save(category);
     }
@@ -44,6 +59,11 @@ let CategoriesService = class CategoriesService {
         const category = await this.findOne(id);
         if (dto.name && !dto.slug)
             dto.slug = (0, slug_util_1.slugify)(dto.name);
+        if (dto.parentId) {
+            if (dto.parentId === id)
+                throw new common_1.ConflictException('A category cannot be its own parent');
+            await this.findOne(dto.parentId);
+        }
         Object.assign(category, dto);
         return this.categoryRepo.save(category);
     }

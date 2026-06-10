@@ -4,6 +4,9 @@ export declare class Category {
     name: string;
     slug: string;
     isActive: boolean;
+    parent: Category | null;
+    parentId: number | null;
+    children: Category[];
     products: Product[];
     createdAt: Date;
     updatedAt: Date;

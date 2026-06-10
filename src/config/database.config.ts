@@ -11,9 +11,8 @@ export default registerAs(
     password: process.env.DB_PASSWORD ?? '',
     database: process.env.DB_DATABASE ?? 'capilar_shopping',
     entities: [__dirname + '/../**/*.entity{.ts,.js}'],
-    // synchronize:true es conveniente en desarrollo.
-    // En producción setear a false y usar migraciones (npm run migration:run).
-    synchronize: process.env.NODE_ENV !== 'production',
+    // Activar solo en bases locales y de forma explícita.
+    synchronize: process.env.DB_SYNCHRONIZE === 'true',
     logging: process.env.NODE_ENV === 'development',
     charset: 'utf8mb4',
   }),
