@@ -12,8 +12,11 @@ async function bootstrap() {
 
   const allowedOrigins = [
     process.env.FRONTEND_URL,
+    'https://capilarshopping.com',
+    'https://www.capilarshopping.com',
     'https://lemonchiffon-goldfish-284566.hostingersite.com',
     'https://navajowhite-quetzal-176085.hostingersite.com',
+    'https://capilarshopping-com-622134.hostingersite.com',
   ].filter(Boolean);
 
   app.enableCors({
