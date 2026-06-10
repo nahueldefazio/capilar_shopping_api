@@ -1,5 +1,6 @@
 import { NestFactory } from '@nestjs/core';
 import { ValidationPipe } from '@nestjs/common';
+import { Request, Response } from 'express';
 import { AppModule } from './app.module';
 import { AllExceptionsFilter } from './common/filters/http-exception.filter';
 
@@ -40,6 +41,14 @@ async function bootstrap() {
 
   // Filtro global de excepciones
   app.useGlobalFilters(new AllExceptionsFilter());
+
+  app.getHttpAdapter().getInstance().get('/', (_req: Request, res: Response) => {
+    res.json({
+      status: 'ok',
+      service: 'Capilar Shopping API',
+      health: '/api/health',
+    });
+  });
 
   const port = process.env.PORT ?? 3000;
   await app.listen(port);

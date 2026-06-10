@@ -32,6 +32,13 @@ async function bootstrap() {
         transformOptions: { enableImplicitConversion: true },
     }));
     app.useGlobalFilters(new http_exception_filter_1.AllExceptionsFilter());
+    app.getHttpAdapter().getInstance().get('/', (_req, res) => {
+        res.json({
+            status: 'ok',
+            service: 'Capilar Shopping API',
+            health: '/api/health',
+        });
+    });
     const port = process.env.PORT ?? 3000;
     await app.listen(port);
     console.log(`🚀 API running on http://localhost:${port}/api`);
