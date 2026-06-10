@@ -106,8 +106,11 @@ let OrdersService = class OrdersService {
             let shippingCost = 0;
             let shippingZone = null;
             if (needsShipping) {
+                if (!dto.shipping) {
+                    throw new common_1.BadRequestException('Shipping address is required for home delivery');
+                }
                 const totalWeightGrams = resolvedItems.reduce((sum, { product, quantity }) => sum + (product.weightGrams ?? 0) * quantity, 0);
-                const province = dto.shipping?.province ?? dto.customer.province ?? '';
+                const province = dto.shipping.province;
                 const shippingResult = await this.shippingService.calculateFromWeight(province, totalWeightGrams, dto.deliveryMethod);
                 shippingCost = shippingResult.shippingCost ?? 0;
                 shippingZone = shippingResult.zone;
