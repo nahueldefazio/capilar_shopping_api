@@ -21,16 +21,86 @@ const shipping_rate_entity_1 = require("./entities/shipping-rate.entity");
 const product_entity_1 = require("../products/entities/product.entity");
 const shipping_zone_enum_1 = require("../../common/enums/shipping-zone.enum");
 const DEFAULT_RATES = [
-    { zone: shipping_zone_enum_1.ShippingZone.CABA, minWeightGrams: 0, maxWeightGrams: 1000, price: 4000 },
-    { zone: shipping_zone_enum_1.ShippingZone.CABA, minWeightGrams: 1001, maxWeightGrams: 3000, price: 5500 },
-    { zone: shipping_zone_enum_1.ShippingZone.CABA, minWeightGrams: 3001, maxWeightGrams: 5000, price: 7000 },
-    { zone: shipping_zone_enum_1.ShippingZone.GBA, minWeightGrams: 0, maxWeightGrams: 1000, price: 5000 },
-    { zone: shipping_zone_enum_1.ShippingZone.GBA, minWeightGrams: 1001, maxWeightGrams: 3000, price: 6500 },
-    { zone: shipping_zone_enum_1.ShippingZone.GBA, minWeightGrams: 3001, maxWeightGrams: 5000, price: 8000 },
-    { zone: shipping_zone_enum_1.ShippingZone.INTERIOR, minWeightGrams: 0, maxWeightGrams: 1000, price: 8000 },
-    { zone: shipping_zone_enum_1.ShippingZone.INTERIOR, minWeightGrams: 1001, maxWeightGrams: 3000, price: 10000 },
-    { zone: shipping_zone_enum_1.ShippingZone.INTERIOR, minWeightGrams: 3001, maxWeightGrams: 5000, price: 13000 },
+    { zone: shipping_zone_enum_1.ShippingZone.CABA, minWeightGrams: 0, maxWeightGrams: 1000, price: 19000 },
+    { zone: shipping_zone_enum_1.ShippingZone.CABA, minWeightGrams: 1001, maxWeightGrams: 3000, price: 23000 },
+    { zone: shipping_zone_enum_1.ShippingZone.CABA, minWeightGrams: 3001, maxWeightGrams: 5000, price: 27000 },
+    { zone: shipping_zone_enum_1.ShippingZone.GBA, minWeightGrams: 0, maxWeightGrams: 1000, price: 22000 },
+    { zone: shipping_zone_enum_1.ShippingZone.GBA, minWeightGrams: 1001, maxWeightGrams: 3000, price: 27000 },
+    { zone: shipping_zone_enum_1.ShippingZone.GBA, minWeightGrams: 3001, maxWeightGrams: 5000, price: 32000 },
+    { zone: shipping_zone_enum_1.ShippingZone.INTERIOR, minWeightGrams: 0, maxWeightGrams: 1000, price: 26000 },
+    { zone: shipping_zone_enum_1.ShippingZone.INTERIOR, minWeightGrams: 1001, maxWeightGrams: 3000, price: 34000 },
+    { zone: shipping_zone_enum_1.ShippingZone.INTERIOR, minWeightGrams: 3001, maxWeightGrams: 5000, price: 42000 },
 ];
+const GBA_LOCALITIES = new Set([
+    'almirante brown',
+    'adrogue',
+    'burzaco',
+    'claypole',
+    'longchamps',
+    'avellaneda',
+    'dock sud',
+    'gerli',
+    'sarandi',
+    'wilde',
+    'berazategui',
+    'esteban echeverria',
+    'monte grande',
+    'luis guillon',
+    'ezeiza',
+    'canning',
+    'florencio varela',
+    'general san martin',
+    'san martin',
+    'villa ballester',
+    'hurlingham',
+    'ituzaingo',
+    'jose c paz',
+    'la matanza',
+    'ciudad evita',
+    'gregorio de laferrere',
+    'laferrere',
+    'ramos mejia',
+    'san justo',
+    'lanus',
+    'remedios de escalada',
+    'valentin alsina',
+    'lomas de zamora',
+    'banfield',
+    'temperley',
+    'malvinas argentinas',
+    'grand bourg',
+    'merlo',
+    'moreno',
+    'moron',
+    'castelar',
+    'haedo',
+    'quilmes',
+    'bernal',
+    'ezpeleta',
+    'san fernando',
+    'victoria',
+    'san isidro',
+    'beccar',
+    'boulogne',
+    'martinez',
+    'san miguel',
+    'bella vista',
+    'tigre',
+    'tres de febrero',
+    'caseros',
+    'santos lugares',
+    'vicente lopez',
+    'florida',
+    'munro',
+    'olivos',
+]);
+function normalizeZoneText(value) {
+    return value
+        .trim()
+        .toLowerCase()
+        .normalize('NFD')
+        .replace(/[\u0300-\u036f]/g, '');
+}
 let ShippingService = ShippingService_1 = class ShippingService {
     rateRepo;
     productRepo;
@@ -46,17 +116,19 @@ let ShippingService = ShippingService_1 = class ShippingService {
             this.logger.log('Shipping rates seeded.');
         }
     }
-    detectZone(province) {
-        const normalized = province.trim().toLowerCase();
-        if (normalized === 'ciudad autónoma de buenos aires' || normalized === 'caba') {
+    detectZone(province, city = '') {
+        const normalized = normalizeZoneText(province);
+        const normalizedCity = normalizeZoneText(city);
+        if (normalized === 'ciudad autonoma de buenos aires' ||
+            normalized === 'caba') {
             return shipping_zone_enum_1.ShippingZone.CABA;
         }
         if (normalized === 'buenos aires') {
-            return shipping_zone_enum_1.ShippingZone.GBA;
+            return GBA_LOCALITIES.has(normalizedCity) ? shipping_zone_enum_1.ShippingZone.GBA : shipping_zone_enum_1.ShippingZone.INTERIOR;
         }
         return shipping_zone_enum_1.ShippingZone.INTERIOR;
     }
-    async calculateFromWeight(province, totalWeightGrams, deliveryMethod = 'home_delivery') {
+    async calculateFromWeight(province, totalWeightGrams, deliveryMethod = 'home_delivery', city = '') {
         if (deliveryMethod === 'pickup' || deliveryMethod === 'coordinate_by_whatsapp') {
             return {
                 shippingMethod: deliveryMethod,
@@ -75,7 +147,7 @@ let ShippingService = ShippingService_1 = class ShippingService {
                 message: 'El envío se coordina por WhatsApp por superar los 5 kg',
             };
         }
-        const zone = this.detectZone(province);
+        const zone = this.detectZone(province, city);
         const rate = await this.rateRepo
             .createQueryBuilder('r')
             .where('r.zone = :zone', { zone })
@@ -107,7 +179,7 @@ let ShippingService = ShippingService_1 = class ShippingService {
             const product = products.find((p) => p.id === item.productId);
             return sum + (product?.weightGrams ?? 0) * item.quantity;
         }, 0);
-        return this.calculateFromWeight(dto.province, totalWeightGrams, method);
+        return this.calculateFromWeight(dto.province, totalWeightGrams, method, dto.city);
     }
     async getRates() {
         return this.rateRepo.find({ order: { zone: 'ASC', minWeightGrams: 'ASC' } });

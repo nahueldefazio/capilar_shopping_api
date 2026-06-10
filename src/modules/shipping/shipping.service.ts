@@ -20,16 +20,88 @@ const DEFAULT_RATES: Array<{
   maxWeightGrams: number;
   price: number;
 }> = [
-  { zone: ShippingZone.CABA,     minWeightGrams: 0,    maxWeightGrams: 1000,  price: 4000  },
-  { zone: ShippingZone.CABA,     minWeightGrams: 1001, maxWeightGrams: 3000,  price: 5500  },
-  { zone: ShippingZone.CABA,     minWeightGrams: 3001, maxWeightGrams: 5000,  price: 7000  },
-  { zone: ShippingZone.GBA,      minWeightGrams: 0,    maxWeightGrams: 1000,  price: 5000  },
-  { zone: ShippingZone.GBA,      minWeightGrams: 1001, maxWeightGrams: 3000,  price: 6500  },
-  { zone: ShippingZone.GBA,      minWeightGrams: 3001, maxWeightGrams: 5000,  price: 8000  },
-  { zone: ShippingZone.INTERIOR, minWeightGrams: 0,    maxWeightGrams: 1000,  price: 8000  },
-  { zone: ShippingZone.INTERIOR, minWeightGrams: 1001, maxWeightGrams: 3000,  price: 10000 },
-  { zone: ShippingZone.INTERIOR, minWeightGrams: 3001, maxWeightGrams: 5000,  price: 13000 },
+  { zone: ShippingZone.CABA,     minWeightGrams: 0,    maxWeightGrams: 1000,  price: 19000 },
+  { zone: ShippingZone.CABA,     minWeightGrams: 1001, maxWeightGrams: 3000,  price: 23000 },
+  { zone: ShippingZone.CABA,     minWeightGrams: 3001, maxWeightGrams: 5000,  price: 27000 },
+  { zone: ShippingZone.GBA,      minWeightGrams: 0,    maxWeightGrams: 1000,  price: 22000 },
+  { zone: ShippingZone.GBA,      minWeightGrams: 1001, maxWeightGrams: 3000,  price: 27000 },
+  { zone: ShippingZone.GBA,      minWeightGrams: 3001, maxWeightGrams: 5000,  price: 32000 },
+  { zone: ShippingZone.INTERIOR, minWeightGrams: 0,    maxWeightGrams: 1000,  price: 26000 },
+  { zone: ShippingZone.INTERIOR, minWeightGrams: 1001, maxWeightGrams: 3000,  price: 34000 },
+  { zone: ShippingZone.INTERIOR, minWeightGrams: 3001, maxWeightGrams: 5000,  price: 42000 },
 ];
+
+const GBA_LOCALITIES = new Set([
+  'almirante brown',
+  'adrogue',
+  'burzaco',
+  'claypole',
+  'longchamps',
+  'avellaneda',
+  'dock sud',
+  'gerli',
+  'sarandi',
+  'wilde',
+  'berazategui',
+  'esteban echeverria',
+  'monte grande',
+  'luis guillon',
+  'ezeiza',
+  'canning',
+  'florencio varela',
+  'general san martin',
+  'san martin',
+  'villa ballester',
+  'hurlingham',
+  'ituzaingo',
+  'jose c paz',
+  'la matanza',
+  'ciudad evita',
+  'gregorio de laferrere',
+  'laferrere',
+  'ramos mejia',
+  'san justo',
+  'lanus',
+  'remedios de escalada',
+  'valentin alsina',
+  'lomas de zamora',
+  'banfield',
+  'temperley',
+  'malvinas argentinas',
+  'grand bourg',
+  'merlo',
+  'moreno',
+  'moron',
+  'castelar',
+  'haedo',
+  'quilmes',
+  'bernal',
+  'ezpeleta',
+  'san fernando',
+  'victoria',
+  'san isidro',
+  'beccar',
+  'boulogne',
+  'martinez',
+  'san miguel',
+  'bella vista',
+  'tigre',
+  'tres de febrero',
+  'caseros',
+  'santos lugares',
+  'vicente lopez',
+  'florida',
+  'munro',
+  'olivos',
+]);
+
+function normalizeZoneText(value: string): string {
+  return value
+    .trim()
+    .toLowerCase()
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '');
+}
 
 @Injectable()
 export class ShippingService implements OnModuleInit {
@@ -50,13 +122,18 @@ export class ShippingService implements OnModuleInit {
     }
   }
 
-  detectZone(province: string): ShippingZone {
-    const normalized = province.trim().toLowerCase();
-    if (normalized === 'ciudad autónoma de buenos aires' || normalized === 'caba') {
+  detectZone(province: string, city = ''): ShippingZone {
+    const normalized = normalizeZoneText(province);
+    const normalizedCity = normalizeZoneText(city);
+
+    if (
+      normalized === 'ciudad autonoma de buenos aires' ||
+      normalized === 'caba'
+    ) {
       return ShippingZone.CABA;
     }
     if (normalized === 'buenos aires') {
-      return ShippingZone.GBA;
+      return GBA_LOCALITIES.has(normalizedCity) ? ShippingZone.GBA : ShippingZone.INTERIOR;
     }
     return ShippingZone.INTERIOR;
   }
@@ -65,6 +142,7 @@ export class ShippingService implements OnModuleInit {
     province: string,
     totalWeightGrams: number,
     deliveryMethod = 'home_delivery',
+    city = '',
   ): Promise<ShippingCalculationResult> {
     if (deliveryMethod === 'pickup' || deliveryMethod === 'coordinate_by_whatsapp') {
       return {
@@ -86,7 +164,7 @@ export class ShippingService implements OnModuleInit {
       };
     }
 
-    const zone = this.detectZone(province);
+    const zone = this.detectZone(province, city);
     const rate = await this.rateRepo
       .createQueryBuilder('r')
       .where('r.zone = :zone', { zone })
@@ -123,7 +201,7 @@ export class ShippingService implements OnModuleInit {
       return sum + (product?.weightGrams ?? 0) * item.quantity;
     }, 0);
 
-    return this.calculateFromWeight(dto.province, totalWeightGrams, method);
+    return this.calculateFromWeight(dto.province, totalWeightGrams, method, dto.city);
   }
 
   async getRates(): Promise<ShippingRate[]> {

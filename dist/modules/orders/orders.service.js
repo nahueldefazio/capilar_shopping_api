@@ -111,7 +111,7 @@ let OrdersService = class OrdersService {
                 }
                 const totalWeightGrams = resolvedItems.reduce((sum, { product, quantity }) => sum + (product.weightGrams ?? 0) * quantity, 0);
                 const province = dto.shipping.province;
-                const shippingResult = await this.shippingService.calculateFromWeight(province, totalWeightGrams, dto.deliveryMethod);
+                const shippingResult = await this.shippingService.calculateFromWeight(province, totalWeightGrams, dto.deliveryMethod, dto.shipping.city);
                 shippingCost = shippingResult.shippingCost ?? 0;
                 shippingZone = shippingResult.zone;
             }

@@ -128,6 +128,7 @@ export class OrdersService implements OnModuleInit {
           province,
           totalWeightGrams,
           dto.deliveryMethod,
+          dto.shipping.city,
         );
         shippingCost = shippingResult.shippingCost ?? 0;
         shippingZone = shippingResult.zone;

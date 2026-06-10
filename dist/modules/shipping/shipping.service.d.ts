@@ -17,8 +17,8 @@ export declare class ShippingService implements OnModuleInit {
     private readonly logger;
     constructor(rateRepo: Repository<ShippingRate>, productRepo: Repository<Product>);
     onModuleInit(): Promise<void>;
-    detectZone(province: string): ShippingZone;
-    calculateFromWeight(province: string, totalWeightGrams: number, deliveryMethod?: string): Promise<ShippingCalculationResult>;
+    detectZone(province: string, city?: string): ShippingZone;
+    calculateFromWeight(province: string, totalWeightGrams: number, deliveryMethod?: string, city?: string): Promise<ShippingCalculationResult>;
     calculate(dto: CalculateShippingDto): Promise<ShippingCalculationResult>;
     getRates(): Promise<ShippingRate[]>;
 }
