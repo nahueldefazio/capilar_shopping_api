@@ -18,6 +18,7 @@ const typeorm_1 = require("@nestjs/typeorm");
 const typeorm_2 = require("typeorm");
 const product_entity_1 = require("./entities/product.entity");
 const slug_util_1 = require("../../common/utils/slug.util");
+const sale_type_enum_1 = require("../../common/enums/sale-type.enum");
 let ProductsService = class ProductsService {
     productRepo;
     constructor(productRepo) {
@@ -28,8 +29,14 @@ let ProductsService = class ProductsService {
             .createQueryBuilder('p')
             .leftJoinAndSelect('p.category', 'c')
             .where('p.isActive = true');
-        if (query?.saleType)
+        if (query?.saleType && [sale_type_enum_1.SaleType.SALON, sale_type_enum_1.SaleType.WHOLESALE].includes(query.saleType)) {
             qb.andWhere('p.saleType = :saleType', { saleType: query.saleType });
+        }
+        else {
+            qb.andWhere('p.saleType IN (:...saleTypes)', {
+                saleTypes: [sale_type_enum_1.SaleType.SALON, sale_type_enum_1.SaleType.WHOLESALE],
+            });
+        }
         if (query?.categoryId)
             qb.andWhere('p.categoryId = :categoryId', { categoryId: query.categoryId });
         if (query?.featured)
@@ -40,13 +47,21 @@ let ProductsService = class ProductsService {
     }
     async findFeatured() {
         return this.productRepo.find({
-            where: { isActive: true, featured: true },
+            where: [
+                { isActive: true, featured: true, saleType: sale_type_enum_1.SaleType.SALON },
+                { isActive: true, featured: true, saleType: sale_type_enum_1.SaleType.WHOLESALE },
+            ],
             order: { name: 'ASC' },
             take: 8,
         });
     }
     async findBySlug(slug) {
-        const product = await this.productRepo.findOne({ where: { slug, isActive: true } });
+        const product = await this.productRepo.findOne({
+            where: [
+                { slug, isActive: true, saleType: sale_type_enum_1.SaleType.SALON },
+                { slug, isActive: true, saleType: sale_type_enum_1.SaleType.WHOLESALE },
+            ],
+        });
         if (!product)
             throw new common_1.NotFoundException(`Product "${slug}" not found`);
         return product;
@@ -62,7 +77,7 @@ let ProductsService = class ProductsService {
         const exists = await this.productRepo.findOne({ where: { slug } });
         if (exists)
             throw new common_1.ConflictException(`Slug "${slug}" already exists`);
-        const product = this.productRepo.create({ ...dto, slug });
+        const product = this.productRepo.create({ ...dto, slug, saleType: dto.saleType ?? sale_type_enum_1.SaleType.SALON });
         return this.productRepo.save(product);
     }
     async update(id, dto) {

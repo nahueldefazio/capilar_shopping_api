@@ -4,7 +4,7 @@ import {
 } from '@nestjs/common';
 import { OrdersService } from './orders.service';
 import { CreateOrderDto } from './dto/create-order.dto';
-import { UpdateOrderStatusDto, UpdatePaymentStatusDto, UpdateShippingDto } from './dto/update-order.dto';
+import { UpdateOrderStatusDto, UpdateShippingDto } from './dto/update-order.dto';
 import { AuthGuard } from '../auth/auth.guard';
 
 @Controller('orders')
@@ -33,14 +33,6 @@ export class OrdersController {
     @Body() dto: UpdateOrderStatusDto,
   ) {
     return this.ordersService.updateStatus(id, dto);
-  }
-
-  @Patch(':id/payment-status')
-  updatePaymentStatus(
-    @Param('id', ParseIntPipe) id: number,
-    @Body() dto: UpdatePaymentStatusDto,
-  ) {
-    return this.ordersService.updatePaymentStatus(id, dto);
   }
 
   @Patch(':id/shipping')

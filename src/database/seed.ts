@@ -20,6 +20,7 @@ async function seed() {
     { name: 'Tratamientos', slug: 'tratamientos' },
     { name: 'Peluquerías', slug: 'peluquerias' },
     { name: 'Mayorista', slug: 'mayorista' },
+    { name: 'Plasma', slug: 'plasma' },
     { name: 'Combos', slug: 'combos' },
   ];
 
@@ -34,7 +35,31 @@ async function seed() {
     }
   }
 
-  const [cuidado, tratamientos, peluquerias, mayorista, combos] = categories;
+  const [cuidado, tratamientos, peluquerias, mayorista, plasma, combos] = categories;
+
+  const plasmaCategoriesData = [
+    { name: 'Plasma Color', slug: 'plasma-color' },
+    { name: 'Power Color', slug: 'power-color' },
+    { name: 'Buckling', slug: 'buckling' },
+    { name: 'Ionix', slug: 'ionix' },
+    { name: 'Profesional', slug: 'profesional' },
+    { name: 'Decoloración Profesional', slug: 'decoloracion-profesional' },
+    { name: 'Coloración Semipermanente', slug: 'coloracion-semipermanente' },
+    { name: 'Tratamientos Plasma', slug: 'tratamientos-plasma' },
+    { name: 'Monodosis', slug: 'monodosis' },
+  ];
+
+  for (const data of plasmaCategoriesData) {
+    const existing = await categoryRepo.findOne({ where: { slug: data.slug } });
+    if (!existing) {
+      await categoryRepo.save(categoryRepo.create({ ...data, parentId: plasma.id }));
+      console.log(`  ✔ Category: Plasma / ${data.name}`);
+    } else if (existing.parentId !== plasma.id) {
+      existing.parentId = plasma.id;
+      existing.isActive = true;
+      await categoryRepo.save(existing);
+    }
+  }
 
   // Products
   const productsData = [

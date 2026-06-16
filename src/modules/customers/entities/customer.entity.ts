@@ -23,7 +23,7 @@ export class Customer {
   @Column({ length: 30, nullable: true })
   phone: string;
 
-  @Column({ type: 'enum', enum: SaleType, default: SaleType.RETAIL })
+  @Column({ type: 'enum', enum: SaleType, default: SaleType.SALON })
   customerType: SaleType;
 
   @Column({ length: 300, nullable: true })

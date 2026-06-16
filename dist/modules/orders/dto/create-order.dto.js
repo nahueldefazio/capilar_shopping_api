@@ -12,8 +12,6 @@ Object.defineProperty(exports, "__esModule", { value: true });
 exports.CreateOrderDto = exports.OrderShippingInputDto = exports.OrderCustomerDto = exports.OrderItemInputDto = void 0;
 const class_validator_1 = require("class-validator");
 const class_transformer_1 = require("class-transformer");
-const payment_enum_1 = require("../../../common/enums/payment.enum");
-const delivery_method_enum_1 = require("../../../common/enums/delivery-method.enum");
 const sale_type_enum_1 = require("../../../common/enums/sale-type.enum");
 const NAME_PATTERN = /^[A-Za-zÁÉÍÓÚÜÑáéíóúüñ]+(?:[ '-][A-Za-zÁÉÍÓÚÜÑáéíóúüñ]+)+$/;
 const PHONE_PATTERN = /^(?!\+?(\d)(?:[\s().-]*\1){7,}[\s().-]*$)\+?[\d\s().-]{8,22}$/;
@@ -150,8 +148,6 @@ class CreateOrderDto {
     customer;
     shipping;
     items;
-    paymentMethod;
-    deliveryMethod;
     notes;
 }
 exports.CreateOrderDto = CreateOrderDto;
@@ -161,7 +157,6 @@ __decorate([
     __metadata("design:type", OrderCustomerDto)
 ], CreateOrderDto.prototype, "customer", void 0);
 __decorate([
-    (0, class_validator_1.ValidateIf)((order) => order.deliveryMethod === delivery_method_enum_1.DeliveryMethod.HOME_DELIVERY),
     (0, class_validator_1.IsDefined)(),
     (0, class_validator_1.ValidateNested)(),
     (0, class_transformer_1.Type)(() => OrderShippingInputDto),
@@ -174,14 +169,6 @@ __decorate([
     (0, class_transformer_1.Type)(() => OrderItemInputDto),
     __metadata("design:type", Array)
 ], CreateOrderDto.prototype, "items", void 0);
-__decorate([
-    (0, class_validator_1.IsEnum)(payment_enum_1.PaymentMethod),
-    __metadata("design:type", String)
-], CreateOrderDto.prototype, "paymentMethod", void 0);
-__decorate([
-    (0, class_validator_1.IsEnum)(delivery_method_enum_1.DeliveryMethod),
-    __metadata("design:type", String)
-], CreateOrderDto.prototype, "deliveryMethod", void 0);
 __decorate([
     (0, class_validator_1.IsString)(),
     (0, class_validator_1.IsOptional)(),

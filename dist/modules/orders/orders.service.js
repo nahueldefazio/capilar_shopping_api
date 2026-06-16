@@ -23,10 +23,7 @@ const order_shipping_entity_1 = require("./entities/order-shipping.entity");
 const product_entity_1 = require("../products/entities/product.entity");
 const customers_service_1 = require("../customers/customers.service");
 const products_service_1 = require("../products/products.service");
-const shipping_service_1 = require("../shipping/shipping.service");
 const order_status_enum_1 = require("../../common/enums/order-status.enum");
-const payment_enum_1 = require("../../common/enums/payment.enum");
-const delivery_method_enum_1 = require("../../common/enums/delivery-method.enum");
 const slug_util_1 = require("../../common/utils/slug.util");
 const emails_service_1 = require("../emails/emails.service");
 let OrdersService = class OrdersService {
@@ -35,16 +32,14 @@ let OrdersService = class OrdersService {
     shippingRepo;
     customersService;
     productsService;
-    shippingService;
     dataSource;
     emailsService;
-    constructor(orderRepo, itemRepo, shippingRepo, customersService, productsService, shippingService, dataSource, emailsService) {
+    constructor(orderRepo, itemRepo, shippingRepo, customersService, productsService, dataSource, emailsService) {
         this.orderRepo = orderRepo;
         this.itemRepo = itemRepo;
         this.shippingRepo = shippingRepo;
         this.customersService = customersService;
         this.productsService = productsService;
-        this.shippingService = shippingService;
         this.dataSource = dataSource;
         this.emailsService = emailsService;
     }
@@ -70,7 +65,7 @@ let OrdersService = class OrdersService {
     async findOne(id) {
         const order = await this.orderRepo.findOne({
             where: { id },
-            relations: ['customer', 'items', 'payments', 'shipping'],
+            relations: ['customer', 'items', 'shipping'],
         });
         if (!order)
             throw new common_1.NotFoundException(`Order #${id} not found`);
@@ -81,7 +76,7 @@ let OrdersService = class OrdersService {
             throw new common_1.NotFoundException(`Order #${id} not found`);
         const order = await this.orderRepo.findOne({
             where: { id, publicToken },
-            relations: ['customer', 'items', 'payments', 'shipping'],
+            relations: ['customer', 'items', 'shipping'],
         });
         if (!order)
             throw new common_1.NotFoundException(`Order #${id} not found`);
@@ -102,39 +97,15 @@ let OrdersService = class OrdersService {
                 resolvedItems.push({ product, quantity: itemDto.quantity });
             }
             const subtotal = resolvedItems.reduce((sum, { product, quantity }) => sum + Number(product.price) * quantity, 0);
-            const needsShipping = dto.deliveryMethod === delivery_method_enum_1.DeliveryMethod.HOME_DELIVERY ||
-                dto.deliveryMethod === delivery_method_enum_1.DeliveryMethod.PICKUP;
-            let shippingCost = 0;
-            let shippingZone = null;
-            if (needsShipping) {
-                if (dto.deliveryMethod === delivery_method_enum_1.DeliveryMethod.HOME_DELIVERY && !dto.shipping) {
-                    throw new common_1.BadRequestException('Shipping address is required for home delivery');
-                }
-                const province = dto.deliveryMethod === delivery_method_enum_1.DeliveryMethod.HOME_DELIVERY
-                    ? dto.shipping.province
-                    : (dto.customer.province ?? '');
-                const city = dto.deliveryMethod === delivery_method_enum_1.DeliveryMethod.HOME_DELIVERY
-                    ? dto.shipping.city
-                    : (dto.customer.city ?? '');
-                const shippingResult = this.shippingService.calculateFlat(province, city, dto.deliveryMethod);
-                shippingCost = shippingResult.shippingCost ?? 0;
-                shippingZone = shippingResult.zone;
-            }
-            const total = Math.round((subtotal + shippingCost) * 100) / 100;
+            const total = Math.round(subtotal * 100) / 100;
             const orderNumber = (0, slug_util_1.generateOrderNumber)();
             const order = manager.create(order_entity_1.Order, {
                 orderNumber,
                 publicToken: (0, crypto_1.randomBytes)(32).toString('hex'),
                 customerId: customer.id,
                 subtotal: Math.round(subtotal * 100) / 100,
-                shippingCost: Math.round(shippingCost * 100) / 100,
-                shippingZone,
                 total,
-                status: dto.paymentMethod === payment_enum_1.PaymentMethod.TRANSFER
-                    ? order_status_enum_1.OrderStatus.PENDING_PAYMENT
-                    : order_status_enum_1.OrderStatus.CREATED,
-                paymentMethod: dto.paymentMethod,
-                deliveryMethod: dto.deliveryMethod,
+                status: order_status_enum_1.OrderStatus.RESERVED,
                 notes: dto.notes ?? '',
             });
             const savedOrder = await manager.save(order_entity_1.Order, order);
@@ -147,23 +118,23 @@ let OrdersService = class OrdersService {
                 subtotal: Math.round(Number(product.price) * quantity * 100) / 100,
             }));
             const savedItems = await manager.save(order_item_entity_1.OrderItem, items);
-            let savedShipping;
-            if (needsShipping && dto.shipping) {
-                const shippingRecord = manager.create(order_shipping_entity_1.OrderShipping, {
-                    orderId: savedOrder.id,
-                    province: dto.shipping.province,
-                    city: dto.shipping.city,
-                    postalCode: dto.shipping.postalCode,
-                    street: dto.shipping.street,
-                    streetNumber: dto.shipping.streetNumber,
-                    apartment: dto.shipping.apartment ?? undefined,
-                });
-                savedShipping = await manager.save(order_shipping_entity_1.OrderShipping, shippingRecord);
-            }
+            savedOrder.items = savedItems;
+            await this.deductStockForOrder(manager, savedOrder);
+            savedOrder.stockDeducted = true;
+            await manager.save(order_entity_1.Order, savedOrder);
+            const shippingRecord = manager.create(order_shipping_entity_1.OrderShipping, {
+                orderId: savedOrder.id,
+                province: dto.shipping.province,
+                city: dto.shipping.city,
+                postalCode: dto.shipping.postalCode,
+                street: dto.shipping.street,
+                streetNumber: dto.shipping.streetNumber,
+                apartment: dto.shipping.apartment ?? undefined,
+            });
+            const savedShipping = await manager.save(order_shipping_entity_1.OrderShipping, shippingRecord);
             savedOrder.customer = customer;
             savedOrder.items = savedItems;
             savedOrder.shipping = savedShipping;
-            savedOrder.payments = [];
             return savedOrder;
         });
         await this.emailsService.sendOrderCreated(order);
@@ -174,33 +145,6 @@ let OrdersService = class OrdersService {
         order.status = dto.status;
         await this.orderRepo.save(order);
         return this.findOne(id);
-    }
-    async updatePaymentStatus(id, dto) {
-        const result = await this.dataSource.transaction(async (manager) => {
-            const order = await manager.findOne(order_entity_1.Order, {
-                where: { id },
-                relations: ['customer', 'items', 'payments', 'shipping'],
-                lock: { mode: 'pessimistic_write' },
-            });
-            if (!order)
-                throw new common_1.NotFoundException(`Order #${id} not found`);
-            const shouldDeductStock = dto.paymentStatus === payment_enum_1.PaymentStatus.APPROVED && !order.stockDeducted;
-            if (shouldDeductStock) {
-                await this.deductStockForOrder(manager, order);
-                order.stockDeducted = true;
-            }
-            order.paymentStatus = dto.paymentStatus;
-            if (dto.paymentStatus === payment_enum_1.PaymentStatus.APPROVED) {
-                order.status = order_status_enum_1.OrderStatus.PAID;
-            }
-            await manager.save(order_entity_1.Order, order);
-            return { order, paymentApprovedNow: shouldDeductStock };
-        });
-        const updated = await this.findOne(result.order.id);
-        if (result.paymentApprovedNow) {
-            await this.emailsService.sendPaymentApproved(updated);
-        }
-        return updated;
     }
     async updateShipping(id, dto) {
         const order = await this.findOne(id);
@@ -216,7 +160,7 @@ let OrdersService = class OrdersService {
             order.shipping.trackingNumber = dto.trackingNumber;
         if (dto.trackingUrl !== undefined)
             order.shipping.trackingUrl = dto.trackingUrl;
-        if (dto.shippingStatus === 'shipped' && order.status === order_status_enum_1.OrderStatus.PAID) {
+        if (dto.shippingStatus === 'shipped') {
             order.status = order_status_enum_1.OrderStatus.SHIPPED;
         }
         if (dto.shippingStatus === 'delivered') {
@@ -263,7 +207,6 @@ exports.OrdersService = OrdersService = __decorate([
         typeorm_2.Repository,
         customers_service_1.CustomersService,
         products_service_1.ProductsService,
-        shipping_service_1.ShippingService,
         typeorm_2.DataSource,
         emails_service_1.EmailsService])
 ], OrdersService);

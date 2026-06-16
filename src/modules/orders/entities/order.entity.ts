@@ -12,7 +12,6 @@ import {
 import { Customer } from '../../customers/entities/customer.entity';
 import { OrderItem } from './order-item.entity';
 import { OrderShipping } from './order-shipping.entity';
-import { Payment } from '../../payments/entities/payment.entity';
 import { OrderStatus } from '../../../common/enums/order-status.enum';
 import { PaymentMethod, PaymentStatus } from '../../../common/enums/payment.enum';
 import { DeliveryMethod } from '../../../common/enums/delivery-method.enum';
@@ -39,9 +38,6 @@ export class Order {
   @OneToMany(() => OrderItem, (item) => item.order, { cascade: true, eager: true })
   items: OrderItem[];
 
-  @OneToMany(() => Payment, (payment) => payment.order, { cascade: true })
-  payments: Payment[];
-
   @OneToOne(() => OrderShipping, (s) => s.order, { cascade: true, eager: true, nullable: true })
   shipping: OrderShipping;
 
@@ -60,7 +56,7 @@ export class Order {
   @Column({ type: 'enum', enum: OrderStatus, default: OrderStatus.CREATED })
   status: OrderStatus;
 
-  @Column({ type: 'enum', enum: PaymentMethod, default: PaymentMethod.TRANSFER })
+  @Column({ type: 'enum', enum: PaymentMethod, default: PaymentMethod.RESERVATION })
   paymentMethod: PaymentMethod;
 
   @Column({ type: 'enum', enum: PaymentStatus, default: PaymentStatus.PENDING })

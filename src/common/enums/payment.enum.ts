@@ -1,4 +1,5 @@
 export enum PaymentMethod {
+  RESERVATION = 'reservation',
   MERCADOPAGO = 'mercadopago',
   TRANSFER = 'transfer',
   CASH = 'cash',
@@ -9,9 +10,4 @@ export enum PaymentStatus {
   APPROVED = 'approved',
   REJECTED = 'rejected',
   REFUNDED = 'refunded',
-}
-
-export enum PaymentProvider {
-  MERCADOPAGO = 'mercadopago',
-  MANUAL = 'manual',
 }

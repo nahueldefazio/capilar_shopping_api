@@ -18,7 +18,21 @@ const typeorm_1 = require("@nestjs/typeorm");
 const typeorm_2 = require("typeorm");
 const category_entity_1 = require("./entities/category.entity");
 const slug_util_1 = require("../../common/utils/slug.util");
-const CATEGORY_ORDER = ['particulares', 'peluquerias', 'mayorista', 'plasma'];
+const CATEGORY_ORDER = [
+    'peluquerias',
+    'mayorista',
+    'plasma',
+    'plasma-color',
+    'power-color',
+    'buckling',
+    'ionix',
+    'profesional',
+    'decoloracion-profesional',
+    'coloracion-semipermanente',
+    'tratamientos-plasma',
+    'monodosis',
+    'particulares',
+];
 let CategoriesService = class CategoriesService {
     categoryRepo;
     constructor(categoryRepo) {

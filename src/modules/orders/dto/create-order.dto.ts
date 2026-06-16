@@ -14,11 +14,8 @@ import {
   Length,
   Matches,
   MaxLength,
-  ValidateIf,
 } from 'class-validator';
 import { Type } from 'class-transformer';
-import { PaymentMethod } from '../../../common/enums/payment.enum';
-import { DeliveryMethod } from '../../../common/enums/delivery-method.enum';
 import { SaleType } from '../../../common/enums/sale-type.enum';
 
 const NAME_PATTERN = /^[A-Za-zÁÉÍÓÚÜÑáéíóúüñ]+(?:[ '-][A-Za-zÁÉÍÓÚÜÑáéíóúüñ]+)+$/;
@@ -123,23 +120,16 @@ export class CreateOrderDto {
   @Type(() => OrderCustomerDto)
   customer: OrderCustomerDto;
 
-  @ValidateIf((order: CreateOrderDto) => order.deliveryMethod === DeliveryMethod.HOME_DELIVERY)
   @IsDefined()
   @ValidateNested()
   @Type(() => OrderShippingInputDto)
-  shipping?: OrderShippingInputDto;
+  shipping: OrderShippingInputDto;
 
   @IsArray()
   @ArrayMinSize(1)
   @ValidateNested({ each: true })
   @Type(() => OrderItemInputDto)
   items: OrderItemInputDto[];
-
-  @IsEnum(PaymentMethod)
-  paymentMethod: PaymentMethod;
-
-  @IsEnum(DeliveryMethod)
-  deliveryMethod: DeliveryMethod;
 
   @IsString()
   @IsOptional()

@@ -38,7 +38,7 @@ export class Product {
   @Column({ nullable: true })
   imageUrl: string;
 
-  @Column({ type: 'enum', enum: SaleType, default: SaleType.RETAIL })
+  @Column({ type: 'enum', enum: SaleType, default: SaleType.SALON })
   saleType: SaleType;
 
   @Column({ default: true })

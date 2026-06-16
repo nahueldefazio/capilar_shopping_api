@@ -10,6 +10,7 @@ import { Product } from './entities/product.entity';
 import { CreateProductDto } from './dto/create-product.dto';
 import { UpdateProductDto, UpdateStockDto } from './dto/update-product.dto';
 import { slugify } from '../../common/utils/slug.util';
+import { SaleType } from '../../common/enums/sale-type.enum';
 
 @Injectable()
 export class ProductsService {
@@ -29,7 +30,13 @@ export class ProductsService {
       .leftJoinAndSelect('p.category', 'c')
       .where('p.isActive = true');
 
-    if (query?.saleType) qb.andWhere('p.saleType = :saleType', { saleType: query.saleType });
+    if (query?.saleType && [SaleType.SALON, SaleType.WHOLESALE].includes(query.saleType as SaleType)) {
+      qb.andWhere('p.saleType = :saleType', { saleType: query.saleType });
+    } else {
+      qb.andWhere('p.saleType IN (:...saleTypes)', {
+        saleTypes: [SaleType.SALON, SaleType.WHOLESALE],
+      });
+    }
     if (query?.categoryId) qb.andWhere('p.categoryId = :categoryId', { categoryId: query.categoryId });
     if (query?.featured) qb.andWhere('p.featured = true');
     if (query?.search) qb.andWhere('p.name LIKE :search', { search: `%${query.search}%` });
@@ -39,14 +46,22 @@ export class ProductsService {
 
   async findFeatured(): Promise<Product[]> {
     return this.productRepo.find({
-      where: { isActive: true, featured: true },
+      where: [
+        { isActive: true, featured: true, saleType: SaleType.SALON },
+        { isActive: true, featured: true, saleType: SaleType.WHOLESALE },
+      ],
       order: { name: 'ASC' },
       take: 8,
     });
   }
 
   async findBySlug(slug: string): Promise<Product> {
-    const product = await this.productRepo.findOne({ where: { slug, isActive: true } });
+    const product = await this.productRepo.findOne({
+      where: [
+        { slug, isActive: true, saleType: SaleType.SALON },
+        { slug, isActive: true, saleType: SaleType.WHOLESALE },
+      ],
+    });
     if (!product) throw new NotFoundException(`Product "${slug}" not found`);
     return product;
   }
@@ -61,7 +76,7 @@ export class ProductsService {
     const slug = dto.slug ?? slugify(dto.name);
     const exists = await this.productRepo.findOne({ where: { slug } });
     if (exists) throw new ConflictException(`Slug "${slug}" already exists`);
-    const product = this.productRepo.create({ ...dto, slug });
+    const product = this.productRepo.create({ ...dto, slug, saleType: dto.saleType ?? SaleType.SALON });
     return this.productRepo.save(product);
   }
 

@@ -55,7 +55,7 @@ export function normalizeProductRow(
       slug,
       price,
       categoryName,
-      saleType: 'retail',
+      saleType: 'salon',
       stock: 0,
       isActive: true,
       featured: false,

@@ -45,7 +45,7 @@ __decorate([
     __metadata("design:type", String)
 ], Customer.prototype, "phone", void 0);
 __decorate([
-    (0, typeorm_1.Column)({ type: 'enum', enum: sale_type_enum_1.SaleType, default: sale_type_enum_1.SaleType.RETAIL }),
+    (0, typeorm_1.Column)({ type: 'enum', enum: sale_type_enum_1.SaleType, default: sale_type_enum_1.SaleType.SALON }),
     __metadata("design:type", String)
 ], Customer.prototype, "customerType", void 0);
 __decorate([

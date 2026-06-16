@@ -9,10 +9,9 @@ var __metadata = (this && this.__metadata) || function (k, v) {
     if (typeof Reflect === "object" && typeof Reflect.metadata === "function") return Reflect.metadata(k, v);
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.UpdateShippingDto = exports.UpdatePaymentStatusDto = exports.UpdateOrderStatusDto = void 0;
+exports.UpdateShippingDto = exports.UpdateOrderStatusDto = void 0;
 const class_validator_1 = require("class-validator");
 const order_status_enum_1 = require("../../../common/enums/order-status.enum");
-const payment_enum_1 = require("../../../common/enums/payment.enum");
 const shipping_status_enum_1 = require("../../../common/enums/shipping-status.enum");
 class UpdateOrderStatusDto {
     status;
@@ -22,14 +21,6 @@ __decorate([
     (0, class_validator_1.IsEnum)(order_status_enum_1.OrderStatus),
     __metadata("design:type", String)
 ], UpdateOrderStatusDto.prototype, "status", void 0);
-class UpdatePaymentStatusDto {
-    paymentStatus;
-}
-exports.UpdatePaymentStatusDto = UpdatePaymentStatusDto;
-__decorate([
-    (0, class_validator_1.IsEnum)(payment_enum_1.PaymentStatus),
-    __metadata("design:type", String)
-], UpdatePaymentStatusDto.prototype, "paymentStatus", void 0);
 class UpdateShippingDto {
     shippingStatus;
     trackingNumber;

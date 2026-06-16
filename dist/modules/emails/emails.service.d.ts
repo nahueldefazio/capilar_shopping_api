@@ -15,7 +15,6 @@ export declare class EmailsService {
     private warnedDisabled;
     constructor();
     sendOrderCreated(order: Order): Promise<void>;
-    sendPaymentApproved(order: Order): Promise<void>;
     sendShippingUpdated(order: Order): Promise<void>;
     sendLegalRequest(request: LegalRequestEmail): Promise<void>;
     private send;

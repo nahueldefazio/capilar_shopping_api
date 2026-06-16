@@ -21,7 +21,7 @@ export class EmailsService {
 
   constructor() {
     const host = process.env.SMTP_HOST;
-    this.from = process.env.MAIL_FROM ?? 'Capilar Shopping <no-reply@capilarshopping.com>';
+    this.from = process.env.MAIL_FROM ?? 'Luvira <no-reply@capilarshopping.com>';
 
     this.transporter = host
       ? createTransport({
@@ -39,29 +39,15 @@ export class EmailsService {
   }
 
   async sendOrderCreated(order: Order): Promise<void> {
-    const subject = `Pedido recibido ${order.orderNumber}`;
+    const subject = `Reserva recibida ${order.orderNumber}`;
     const html = this.orderHtml(order, {
-      title: 'Recibimos tu pedido',
+      title: 'Recibimos tu solicitud de reserva',
       intro:
-        order.paymentMethod === 'transfer'
-          ? 'Te dejamos el detalle de tu compra y los datos para completar la transferencia.'
-          : 'Te dejamos el detalle de tu compra. Si el pago queda aprobado, te avisamos por este medio.',
-      includeTransfer: order.paymentMethod === 'transfer',
+        'Te dejamos el detalle del presupuesto estimado. Te contactaremos para confirmar disponibilidad, envio y pasos siguientes.',
     });
 
     await this.send(order.customer?.email, subject, html);
-    await this.sendAdmin(`Nuevo pedido ${order.orderNumber}`, html);
-  }
-
-  async sendPaymentApproved(order: Order): Promise<void> {
-    const subject = `Pago aprobado ${order.orderNumber}`;
-    const html = this.orderHtml(order, {
-      title: 'Tu pago fue aprobado',
-      intro: 'Ya confirmamos el pago. Vamos a preparar tu pedido y te avisaremos cuando avance el envío o retiro.',
-    });
-
-    await this.send(order.customer?.email, subject, html);
-    await this.sendAdmin(`Pago aprobado ${order.orderNumber}`, html);
+    await this.sendAdmin(`Nueva reserva ${order.orderNumber}`, html);
   }
 
   async sendShippingUpdated(order: Order): Promise<void> {
@@ -134,10 +120,7 @@ export class EmailsService {
     return this.send(process.env.ADMIN_EMAIL, subject, html);
   }
 
-  private orderHtml(
-    order: Order,
-    options: { title: string; intro: string; includeTransfer?: boolean },
-  ): string {
+  private orderHtml(order: Order, options: { title: string; intro: string }): string {
     const rows = order.items
       .map(
         (item) => `
@@ -150,22 +133,11 @@ export class EmailsService {
       )
       .join('');
 
-    const transfer = options.includeTransfer
-      ? `
-        <h2>Datos para transferencia</h2>
-        <p><strong>Titular:</strong> ${this.escape(process.env.TRANSFER_HOLDER ?? 'Nahuel de Fazio')}</p>
-        <p><strong>CUIT/CUIL:</strong> ${this.escape(process.env.TRANSFER_TAX_ID ?? '20-39185800-5')}</p>
-        <p><strong>CBU/CVU:</strong> ${this.escape(process.env.TRANSFER_CBU ?? '0000003100078452726210')}</p>
-        <p><strong>Alias:</strong> ${this.escape(process.env.TRANSFER_ALIAS ?? 'nahuel.defazio')}</p>
-        <p>Cuando tengas el comprobante, envianoslo por WhatsApp para validar el pago.</p>
-      `
-      : '';
-
     return this.wrapHtml(`
       <h1>${this.escape(options.title)}</h1>
       <p>${this.escape(options.intro)}</p>
-      <p><strong>Pedido:</strong> ${this.escape(order.orderNumber)}</p>
-      <p><strong>Total:</strong> ${this.money(order.total)}</p>
+      <p><strong>Reserva:</strong> ${this.escape(order.orderNumber)}</p>
+      <p><strong>Total estimado:</strong> ${this.money(order.total)}</p>
       <table width="100%" cellpadding="8" cellspacing="0" style="border-collapse:collapse">
         <thead>
           <tr>
@@ -176,7 +148,6 @@ export class EmailsService {
         </thead>
         <tbody>${rows}</tbody>
       </table>
-      ${transfer}
     `);
   }
 
@@ -185,7 +156,7 @@ export class EmailsService {
       <div style="font-family:Arial,sans-serif;color:#2f241f;line-height:1.5;max-width:640px;margin:0 auto">
         ${content}
         <hr style="border:none;border-top:1px solid #eadbd3;margin:24px 0" />
-        <p style="font-size:12px;color:#7d6b63">Capilar Shopping</p>
+        <p style="font-size:12px;color:#7d6b63">Luvira</p>
       </div>
     `;
   }

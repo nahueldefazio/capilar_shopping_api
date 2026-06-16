@@ -38,7 +38,7 @@ async function bootstrap() {
     app.getHttpAdapter().getInstance().get('/', (_req, res) => {
         res.json({
             status: 'ok',
-            service: 'Capilar Shopping API',
+            service: 'Luvira API',
             health: '/api/health',
         });
     });

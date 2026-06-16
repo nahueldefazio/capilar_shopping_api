@@ -7,9 +7,7 @@ import { CategoriesModule } from './modules/categories/categories.module';
 import { ProductsModule } from './modules/products/products.module';
 import { CustomersModule } from './modules/customers/customers.module';
 import { OrdersModule } from './modules/orders/orders.module';
-import { PaymentsModule } from './modules/payments/payments.module';
 import { CheckoutModule } from './modules/checkout/checkout.module';
-import { ShippingModule } from './modules/shipping/shipping.module';
 import { HealthModule } from './modules/health/health.module';
 import { AuthModule } from './modules/auth/auth.module';
 import { UploadsModule } from './modules/uploads/uploads.module';
@@ -35,9 +33,7 @@ import { LegalModule } from './modules/legal/legal.module';
     ProductsModule,
     CustomersModule,
     OrdersModule,
-    PaymentsModule,
     CheckoutModule,
-    ShippingModule,
     LegalModule,
     HealthModule,
   ],

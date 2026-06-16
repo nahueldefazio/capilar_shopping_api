@@ -14,7 +14,6 @@ const typeorm_1 = require("typeorm");
 const customer_entity_1 = require("../../customers/entities/customer.entity");
 const order_item_entity_1 = require("./order-item.entity");
 const order_shipping_entity_1 = require("./order-shipping.entity");
-const payment_entity_1 = require("../../payments/entities/payment.entity");
 const order_status_enum_1 = require("../../../common/enums/order-status.enum");
 const payment_enum_1 = require("../../../common/enums/payment.enum");
 const delivery_method_enum_1 = require("../../../common/enums/delivery-method.enum");
@@ -26,7 +25,6 @@ let Order = class Order {
     customer;
     customerId;
     items;
-    payments;
     shipping;
     subtotal;
     shippingCost;
@@ -68,10 +66,6 @@ __decorate([
     __metadata("design:type", Array)
 ], Order.prototype, "items", void 0);
 __decorate([
-    (0, typeorm_1.OneToMany)(() => payment_entity_1.Payment, (payment) => payment.order, { cascade: true }),
-    __metadata("design:type", Array)
-], Order.prototype, "payments", void 0);
-__decorate([
     (0, typeorm_1.OneToOne)(() => order_shipping_entity_1.OrderShipping, (s) => s.order, { cascade: true, eager: true, nullable: true }),
     __metadata("design:type", order_shipping_entity_1.OrderShipping)
 ], Order.prototype, "shipping", void 0);
@@ -96,7 +90,7 @@ __decorate([
     __metadata("design:type", String)
 ], Order.prototype, "status", void 0);
 __decorate([
-    (0, typeorm_1.Column)({ type: 'enum', enum: payment_enum_1.PaymentMethod, default: payment_enum_1.PaymentMethod.TRANSFER }),
+    (0, typeorm_1.Column)({ type: 'enum', enum: payment_enum_1.PaymentMethod, default: payment_enum_1.PaymentMethod.RESERVATION }),
     __metadata("design:type", String)
 ], Order.prototype, "paymentMethod", void 0);
 __decorate([

@@ -1,8 +1,9 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.PaymentProvider = exports.PaymentStatus = exports.PaymentMethod = void 0;
+exports.PaymentStatus = exports.PaymentMethod = void 0;
 var PaymentMethod;
 (function (PaymentMethod) {
+    PaymentMethod["RESERVATION"] = "reservation";
     PaymentMethod["MERCADOPAGO"] = "mercadopago";
     PaymentMethod["TRANSFER"] = "transfer";
     PaymentMethod["CASH"] = "cash";
@@ -14,9 +15,4 @@ var PaymentStatus;
     PaymentStatus["REJECTED"] = "rejected";
     PaymentStatus["REFUNDED"] = "refunded";
 })(PaymentStatus || (exports.PaymentStatus = PaymentStatus = {}));
-var PaymentProvider;
-(function (PaymentProvider) {
-    PaymentProvider["MERCADOPAGO"] = "mercadopago";
-    PaymentProvider["MANUAL"] = "manual";
-})(PaymentProvider || (exports.PaymentProvider = PaymentProvider = {}));
 //# sourceMappingURL=payment.enum.js.map

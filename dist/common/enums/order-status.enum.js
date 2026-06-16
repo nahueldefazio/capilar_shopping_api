@@ -4,6 +4,7 @@ exports.OrderStatus = void 0;
 var OrderStatus;
 (function (OrderStatus) {
     OrderStatus["CREATED"] = "created";
+    OrderStatus["RESERVED"] = "reserved";
     OrderStatus["PENDING_PAYMENT"] = "pending_payment";
     OrderStatus["PAID"] = "paid";
     OrderStatus["PREPARING"] = "preparing";

@@ -6,7 +6,21 @@ import { CreateCategoryDto } from './dto/create-category.dto';
 import { UpdateCategoryDto } from './dto/update-category.dto';
 import { slugify } from '../../common/utils/slug.util';
 
-const CATEGORY_ORDER = ['particulares', 'peluquerias', 'mayorista', 'plasma'];
+const CATEGORY_ORDER = [
+  'peluquerias',
+  'mayorista',
+  'plasma',
+  'plasma-color',
+  'power-color',
+  'buckling',
+  'ionix',
+  'profesional',
+  'decoloracion-profesional',
+  'coloracion-semipermanente',
+  'tratamientos-plasma',
+  'monodosis',
+  'particulares',
+];
 
 @Injectable()
 export class CategoriesService {

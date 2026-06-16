@@ -1,5 +1,3 @@
-import { PaymentMethod } from '../../../common/enums/payment.enum';
-import { DeliveryMethod } from '../../../common/enums/delivery-method.enum';
 import { SaleType } from '../../../common/enums/sale-type.enum';
 export declare class OrderItemInputDto {
     productId: number;
@@ -25,9 +23,7 @@ export declare class OrderShippingInputDto {
 }
 export declare class CreateOrderDto {
     customer: OrderCustomerDto;
-    shipping?: OrderShippingInputDto;
+    shipping: OrderShippingInputDto;
     items: OrderItemInputDto[];
-    paymentMethod: PaymentMethod;
-    deliveryMethod: DeliveryMethod;
     notes?: string;
 }
