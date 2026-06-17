@@ -97,13 +97,13 @@ let OrdersService = class OrdersService {
                 resolvedItems.push({ product, quantity: itemDto.quantity });
             }
             const subtotal = resolvedItems.reduce((sum, { product, quantity }) => sum + Number(product.price) * quantity, 0);
-            const total = Math.round(subtotal * 100) / 100;
+            const total = Math.round(subtotal);
             const orderNumber = (0, slug_util_1.generateOrderNumber)();
             const order = manager.create(order_entity_1.Order, {
                 orderNumber,
                 publicToken: (0, crypto_1.randomBytes)(32).toString('hex'),
                 customerId: customer.id,
-                subtotal: Math.round(subtotal * 100) / 100,
+                subtotal: Math.round(subtotal),
                 total,
                 status: order_status_enum_1.OrderStatus.RESERVED,
                 notes: dto.notes ?? '',
@@ -115,7 +115,7 @@ let OrdersService = class OrdersService {
                 productName: product.name,
                 unitPrice: Number(product.price),
                 quantity,
-                subtotal: Math.round(Number(product.price) * quantity * 100) / 100,
+                subtotal: Math.round(Number(product.price) * quantity),
             }));
             const savedItems = await manager.save(order_item_entity_1.OrderItem, items);
             savedOrder.items = savedItems;

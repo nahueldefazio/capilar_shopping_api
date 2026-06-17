@@ -31,7 +31,7 @@ function parseArgentinePrice(raw: string): number | null {
 
   const parsed = parseFloat(cleaned);
   if (isNaN(parsed) || parsed <= 0) return null;
-  return Math.round(parsed * 100) / 100;
+  return Math.round(parsed);
 }
 
 export function normalizeProductRow(

@@ -106,7 +106,7 @@ export class OrdersService implements OnModuleInit {
         0,
       );
 
-      const total = Math.round(subtotal * 100) / 100;
+      const total = Math.round(subtotal);
 
       // 4. Generate order number
       const orderNumber = generateOrderNumber();
@@ -116,7 +116,7 @@ export class OrdersService implements OnModuleInit {
         orderNumber,
         publicToken: randomBytes(32).toString('hex'),
         customerId: customer.id,
-        subtotal: Math.round(subtotal * 100) / 100,
+        subtotal: Math.round(subtotal),
         total,
         status: OrderStatus.RESERVED,
         notes: dto.notes ?? '',
@@ -131,7 +131,7 @@ export class OrdersService implements OnModuleInit {
           productName: product.name,
           unitPrice: Number(product.price),
           quantity,
-          subtotal: Math.round(Number(product.price) * quantity * 100) / 100,
+          subtotal: Math.round(Number(product.price) * quantity),
         }),
       );
       const savedItems = await manager.save(OrderItem, items);
